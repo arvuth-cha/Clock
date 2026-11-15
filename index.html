@@ -1,0 +1,3787 @@
+<!doctype html>
+<html lang="th">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Clock & Calendar">
+  <link id="apple-touch-icon-link" rel="apple-touch-icon" href="">
+  <title>iPad Desk Clock &amp; Calendar</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&family=Kanit:wght@300;400;600;700&family=Playfair+Display:wght@500;700&family=Prompt:wght@300;400;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+    html, body {
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+      overflow-x: hidden;
+    }
+    body {
+      font-family: 'Prompt', 'Avenir Next', 'Helvetica Neue', 'Thonburi', sans-serif;
+      background-color: #0f141c;
+      color: #f8fafc;
+      line-height: 1.45;
+      position: relative;
+      min-height: 100vh;
+      -webkit-user-select: none;
+      user-select: none;
+      -webkit-font-smoothing: antialiased;
+      -webkit-transition: background-color 0.35s ease, color 0.3s ease;
+      transition: background-color 0.35s ease, color 0.3s ease;
+    }
+    input, textarea, select {
+      -webkit-user-select: text;
+      user-select: text;
+    }
+
+    /* Background & Dimmer Layers */
+    #bg-layer {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      z-index: 0;
+      background-size: cover;
+      background-position: center center;
+      background-repeat: no-repeat;
+      -webkit-transition: opacity 0.35s ease, background-color 0.35s ease;
+      transition: opacity 0.35s ease, background-color 0.35s ease;
+    }
+    #pattern-layer {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      z-index: 1;
+      pointer-events: none;
+      opacity: 0;
+      -webkit-transition: opacity 0.3s ease;
+      transition: opacity 0.3s ease;
+    }
+    #bg-tint-layer {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      z-index: 2;
+      background: #000000;
+      opacity: 0;
+      pointer-events: none;
+    }
+    #dimmer-layer {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      z-index: 450;
+      background: #000000;
+      opacity: 0;
+      pointer-events: none;
+      -webkit-transition: opacity 0.25s ease;
+      transition: opacity 0.25s ease;
+    }
+
+    /* Pitch-Black Red Night Mode Overrides */
+    body.night-red-active {
+      background-color: #000000 !important;
+    }
+    body.night-red-active #bg-layer {
+      background-color: #000000 !important;
+      background-image: none !important;
+    }
+    body.night-red-active #pattern-layer,
+    body.night-red-active #bg-tint-layer {
+      opacity: 0 !important;
+    }
+    body.night-red-active .surface-card {
+      background-color: transparent !important;
+      border-color: rgba(220, 38, 38, 0.14) !important;
+      box-shadow: none !important;
+    }
+    body.night-red-active.night-borderless .surface-card {
+      border-color: transparent !important;
+    }
+    body.night-red-active .topbar {
+      background-color: rgba(18, 0, 0, 0.75) !important;
+      border-color: rgba(220, 38, 38, 0.28) !important;
+    }
+    body.night-red-active .flip-card {
+      background: #070000 !important;
+      border-color: rgba(220, 38, 38, 0.28) !important;
+      box-shadow: none !important;
+    }
+
+    /* App Shell */
+    #app-shell {
+      position: relative;
+      z-index: 10;
+      min-height: 100vh;
+      display: -webkit-box;
+      display: -webkit-flex;
+      display: flex;
+      -webkit-box-orient: vertical;
+      -webkit-box-direction: normal;
+      -webkit-flex-direction: column;
+      flex-direction: column;
+      padding: 14px 22px 22px 22px;
+    }
+
+    /* Top Control Bar */
+    .topbar {
+      display: -webkit-box;
+      display: -webkit-flex;
+      display: flex;
+      -webkit-box-align: center;
+      -webkit-align-items: center;
+      align-items: center;
+      -webkit-box-pack: justify;
+      -webkit-justify-content: space-between;
+      justify-content: space-between;
+      -webkit-flex-wrap: wrap;
+      flex-wrap: wrap;
+      padding: 8px 14px;
+      border-radius: 14px;
+      margin-bottom: 14px;
+      -webkit-transition: opacity 0.3s ease, -webkit-transform 0.3s ease;
+      transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+    body.zen-mode .topbar {
+      opacity: 0;
+      pointer-events: none;
+      -webkit-transform: translateY(-12px);
+      transform: translateY(-12px);
+    }
+    body.zen-mode.zen-peek .topbar {
+      opacity: 1;
+      pointer-events: auto;
+      -webkit-transform: translateY(0);
+      transform: translateY(0);
+    }
+
+    .zen-restore-btn {
+      position: fixed;
+      top: 12px;
+      right: 14px;
+      z-index: 60;
+      opacity: 0;
+      pointer-events: none;
+      padding: 7px 13px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 600;
+      border: 1px solid rgba(255,255,255,0.2);
+      background: rgba(10, 14, 20, 0.72);
+      color: inherit;
+      cursor: pointer;
+      -webkit-transition: opacity 0.25s ease;
+      transition: opacity 0.25s ease;
+    }
+    body.zen-mode .zen-restore-btn {
+      opacity: 0.32;
+      pointer-events: auto;
+    }
+    body.zen-mode.zen-peek .zen-restore-btn {
+      opacity: 0;
+      pointer-events: none;
+    }
+    body.zen-mode .zen-restore-btn:hover {
+      opacity: 0.95;
+    }
+
+    .brand-group {
+      display: -webkit-box;
+      display: -webkit-flex;
+      display: flex;
+      -webkit-box-align: center;
+      -webkit-align-items: center;
+      align-items: center;
+      -webkit-flex-wrap: wrap;
+      flex-wrap: wrap;
+    }
+    .greeting-text {
+      font-size: 13px;
+      opacity: 0.75;
+      margin-right: 8px;
+      font-weight: 500;
+    }
+    .desk-label {
+      font-size: 15px;
+      font-weight: 700;
+      letter-spacing: 0.01em;
+      margin-right: 10px;
+    }
+    .status-pill {
+      display: -webkit-inline-box;
+      display: -webkit-inline-flex;
+      display: inline-flex;
+      -webkit-box-align: center;
+      -webkit-align-items: center;
+      align-items: center;
+      font-size: 11.5px;
+      font-weight: 600;
+      padding: 3px 9px;
+      border-radius: 999px;
+      border: 1px solid rgba(128,128,128,0.3);
+      background: rgba(128,128,128,0.12);
+      margin-right: 6px;
+      cursor: pointer;
+    }
+    .status-pill.night-on {
+      border-color: rgba(239, 68, 68, 0.55);
+      background: rgba(153, 27, 27, 0.28);
+      color: #fca5a5;
+    }
+
+    .topbar-actions {
+      display: -webkit-box;
+      display: -webkit-flex;
+      display: flex;
+      -webkit-flex-wrap: wrap;
+      flex-wrap: wrap;
+      -webkit-box-align: center;
+      -webkit-align-items: center;
+      align-items: center;
+    }
+    .topbar-actions .icon-btn {
+      margin-left: 6px;
+    }
+
+    .icon-btn {
+      font: inherit;
+      font-size: 12.5px;
+      font-weight: 600;
+      padding: 7px 12px;
+      border-radius: 10px;
+      border: 1px solid rgba(128,128,128,0.28);
+      background: rgba(128,128,128,0.12);
+      color: inherit;
+      cursor: pointer;
+      display: -webkit-inline-box;
+      display: -webkit-inline-flex;
+      display: inline-flex;
+      -webkit-box-align: center;
+      -webkit-align-items: center;
+      align-items: center;
+      -webkit-transition: background 0.18s ease, -webkit-transform 0.1s ease;
+      transition: background 0.18s ease, transform 0.1s ease;
+    }
+    .icon-btn:hover {
+      background: rgba(128,128,128,0.22);
+    }
+    .icon-btn:active {
+      -webkit-transform: scale(0.97);
+      transform: scale(0.97);
+    }
+    .icon-btn.night-btn-active {
+      background: rgba(185, 28, 28, 0.35);
+      border-color: #ef4444;
+      color: #fecaca;
+    }
+    .icon-btn.primary-accent {
+      border-color: transparent;
+    }
+    .icon-btn svg {
+      width: 15px;
+      height: 15px;
+      margin-right: 5px;
+      fill: none;
+      stroke: currentColor;
+      stroke-width: 2;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    /* Ringing Alarm / Timer Banner */
+    .ring-banner {
+      display: none;
+      margin: 0 auto 14px auto;
+      width: 100%;
+      max-width: 720px;
+      padding: 12px 18px;
+      border-radius: 14px;
+      background: #991b1b;
+      color: #ffffff;
+      border: 2px solid #fca5a5;
+      -webkit-box-align: center;
+      -webkit-align-items: center;
+      align-items: center;
+      -webkit-box-pack: justify;
+      -webkit-justify-content: space-between;
+      justify-content: space-between;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.45);
+      z-index: 480;
+    }
+    .ring-banner.active {
+      display: -webkit-box;
+      display: -webkit-flex;
+      display: flex;
+    }
+
+    /* Pixel-Shift Wrapper & Main Stage */
+    #stage-shift-wrap {
+      -webkit-box-flex: 1;
+      -webkit-flex: 1;
+      flex: 1;
+      display: -webkit-box;
+      display: -webkit-flex;
+      display: flex;
+      width: 100%;
+      -webkit-transition: -webkit-transform 1.2s ease;
+      transition: transform 1.2s ease;
+    }
+
+    #stage {
+      -webkit-box-flex: 1;
+      -webkit-flex: 1;
+      flex: 1;
+      display: -webkit-box;
+      display: -webkit-flex;
+      display: flex;
+      -webkit-box-align: stretch;
+      -webkit-align-items: stretch;
+      align-items: stretch;
+      -webkit-box-pack: center;
+      -webkit-justify-content: center;
+      justify-content: center;
+      width: 100%;
+      max-width: 1280px;
+      margin: 0 auto;
+    }
+
+    .stage-split {
+      -webkit-box-orient: horizontal;
+      -webkit-box-direction: normal;
+      -webkit-flex-direction: row;
+      flex-direction: row;
+    }
+    .stage-split.swap-panels {
+      -webkit-box-orient: horizontal;
+      -webkit-box-direction: reverse;
+      -webkit-flex-direction: row-reverse;
+      flex-direction: row-reverse;
+    }
+    .stage-split .panel-clock {
+      -webkit-box-flex: 1.08;
+      -webkit-flex: 1.08;
+      flex: 1.08;
+      margin-right: 20px;
+    }
+    .stage-split.swap-panels .panel-clock {
+      margin-right: 0;
+      margin-left: 20px;
+    }
+    .stage-split .panel-calendar {
+      -webkit-box-flex: 1;
+      -webkit-flex: 1;
+      flex: 1;
+    }
+
+    .stage-stacked {
+      -webkit-box-orient: vertical;
+      -webkit-box-direction: normal;
+      -webkit-flex-direction: column;
+      flex-direction: column;
+      max-width: 920px !important;
+    }
+    .stage-stacked.swap-panels {
+      -webkit-box-orient: vertical;
+      -webkit-box-direction: reverse;
+      -webkit-flex-direction: column-reverse;
+      flex-direction: column-reverse;
+    }
+    .stage-stacked .panel-clock {
+      margin-bottom: 18px;
+      padding: 26px 22px;
+    }
+    .stage-stacked.swap-panels .panel-clock {
+      margin-bottom: 0;
+      margin-top: 18px;
+    }
+
+    .stage-clock-only .panel-calendar {
+      display: none !important;
+    }
+    .stage-clock-only .panel-clock {
+      -webkit-box-flex: 1;
+      -webkit-flex: 1;
+      flex: 1;
+      max-width: 1100px;
+      margin: 0 !important;
+    }
+
+    .stage-calendar-only .panel-clock {
+      display: none !important;
+    }
+    .stage-calendar-only .panel-calendar {
+      -webkit-box-flex: 1;
+      -webkit-flex: 1;
+      flex: 1;
+      max-width: 1040px;
+    }
+
+    /* Responsive fallback for Portrait iPad (768px) & Phones */
+    @media (max-width: 860px) {
+      #app-shell {
+        padding: 10px 12px 16px 12px;
+      }
+      .stage-split, .stage-split.swap-panels {
+        -webkit-box-orient: vertical;
+        -webkit-box-direction: normal;
+        -webkit-flex-direction: column;
+        flex-direction: column;
+      }
+      .stage-split .panel-clock, .stage-split.swap-panels .panel-clock {
+        margin-right: 0;
+        margin-left: 0;
+        margin-bottom: 14px;
+      }
+      .btn-label-hide-sm {
+        display: none;
+      }
+      .icon-btn svg {
+        margin-right: 0;
+      }
+      .icon-btn .btn-text-keep {
+        margin-left: 5px;
+      }
+    }
+
+    /* Surface Cards */
+    .surface-card {
+      border-radius: 24px;
+      border: 1px solid rgba(255,255,255,0.12);
+      padding: 26px;
+      display: -webkit-box;
+      display: -webkit-flex;
+      display: flex;
+      -webkit-box-orient: vertical;
+      -webkit-box-direction: normal;
+      -webkit-flex-direction: column;
+      flex-direction: column;
+      -webkit-box-pack: center;
+      -webkit-justify-content: center;
+      justify-content: center;
+      -webkit-transition: background-color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+      transition: background-color 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+    }
+
+    /* Clock Panel */
+    .panel-clock {
+      -webkit-box-align: center;
+      -webkit-align-items: center;
+      align-items: center;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    #clock-scale-wrap {
+      width: 100%;
+      display: -webkit-box;
+      display: -webkit-flex;
+      display: flex;
+      -webkit-box-orient: vertical;
+      -webkit-box-direction: normal;
+      -webkit-flex-direction: column;
+      flex-direction: column;
+      -webkit-box-align: center;
+      -webkit-align-items: center;
+      align-items: center;
+      -webkit-box-pack: center;
+      -webkit-justify-content: center;
+      justify-content: center;
+      -webkit-transform-origin: center center;
+      transform-origin: center center;
+    }
+
+    .tabular-nums {
+      font-variant-numeric: tabular-nums;
+      -webkit-font-feature-settings: "tnum" 1;
+      font-feature-settings: "tnum" 1;
+    }
+
+    /* 1. Digital Classic */
+    .digital-time-row {
+      display: -webkit-inline-box;
+      display: -webkit-inline-flex;
+      display: inline-flex;
+      -webkit-box-align: baseline;
+      -webkit-align-items: baseline;
+      align-items: baseline;
+      -webkit-box-pack: center;
+      -webkit-justify-content: center;
+      justify-content: center;
+      line-height: 1;
+      letter-spacing: -0.03em;
+    }
+    .digital-main {
+      font-size: 92px;
+    }
+    .digital-colon {
+      display: inline-block;
+      padding: 0 4px;
+      -webkit-transition: opacity 0.15s ease;
+      transition: opacity 0.15s ease;
+    }
+    .digital-colon.dimmed {
+      opacity: 0.2;
+    }
+    .digital-sec {
+      font-size: 38px;
+      margin-left: 8px;
+      opacity: 0.82;
+    }
+    .digital-ampm {
+      font-size: 20px;
+      font-weight: 700;
+      margin-left: 10px;
+      padding: 3px 8px;
+      border-radius: 8px;
+      letter-spacing: 0.04em;
+      vertical-align: super;
+    }
+
+    /* 2. StandBy Oversized Bold */
+    .standby-row {
+      display: -webkit-inline-box;
+      display: -webkit-inline-flex;
+      display: inline-flex;
+      -webkit-box-align: baseline;
+      -webkit-align-items: baseline;
+      align-items: baseline;
+      line-height: 0.92;
+      letter-spacing: -0.045em;
+    }
+    .standby-main {
+      font-size: 122px;
+    }
+    .standby-sec {
+      font-size: 40px;
+      margin-left: 8px;
+    }
+
+    /* 3. Progress Bar Digital */
+    .prog-clock-wrap {
+      display: -webkit-inline-box;
+      display: -webkit-inline-flex;
+      display: inline-flex;
+      -webkit-box-orient: vertical;
+      -webkit-box-direction: normal;
+      -webkit-flex-direction: column;
+      flex-direction: column;
+      -webkit-box-align: center;
+      -webkit-align-items: center;
+      align-items: center;
+      min-width: 280px;
+    }
+    .sec-progress-track {
+      width: 260px;
+      max-width: 80vw;
+      height: 5px;
+      border-radius: 999px;
+      background: rgba(128,128,128,0.22);
+      overflow: hidden;
+      margin-top: 12px;
+    }
+    .sec-progress-fill {
+      height: 100%;
+      width: 0%;
+      border-radius: 999px;
+      -webkit-transition: width 0.25s linear;
+      transition: width 0.25s linear;
+    }
+
+    /* 4. Flip Clock */
+    .flip-row {
+      display: -webkit-inline-box;
+      display: -webkit-inline-flex;
+      display: inline-flex;
+      -webkit-box-align: center;
+      -webkit-align-items: center;
+      align-items: center;
+      -webkit-box-pack: center;
+      -webkit-justify-content: center;
+      justify-content: center;
+    }
+    .flip-card {
+      position: relative;
+      min-width: 112px;
+      padding: 18px 16px;
+      margin: 0 6px;
+      border-radius: 16px;
+      background: rgba(0, 0, 0, 0.34);
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      box-shadow: 0 10px 24px rgba(0,0,0,0.28), inset 0 1px 0 rgba(255,255,255,0.14);
+      font-size: 74px;
+      line-height: 1;
+      text-align: center;
+    }
+    .flip-card:after {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      top: 50%;
+      height: 2px;
+      background: rgba(0, 0, 0, 0.48);
+    }
+    .flip-card.flip-sec-card {
+      min-width: 74px;
+      font-size: 42px;
+      padding: 14px 10px;
+      opacity: 0.9;
+    }
+    .flip-ampm-tag {
+      position: absolute;
+      top: 7px;
+      left: 10px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.06em;
+      opacity: 0.8;
+    }
+
+    /* 5. Minimal Stacked */
+    .minimal-stack {
+      display: -webkit-inline-box;
+      display: -webkit-inline-flex;
+      display: inline-flex;
+      -webkit-box-orient: vertical;
+      -webkit-box-direction: normal;
+      -webkit-flex-direction: column;
+      flex-direction: column;
+      -webkit-box-align: center;
+      -webkit-align-items: center;
+      align-items: center;
+      line-height: 0.88;
+    }
+    .minimal-hr, .minimal-mn {
+      font-size: 106px;
+      letter-spacing: -0.04em;
+    }
+    .minimal-sub {
+      margin-top: 10px;
+      font-size: 17px;
+      font-weight: 600;
+      letter-spacing: 0.14em;
+      opacity: 0.78;
+    }
+
+    /* 6. Analog SVG Clock */
+    .analog-wrap {
+      width: 244px;
+      height: 244px;
+      margin: 0 auto 10px auto;
+      position: relative;
+    }
+    .analog-svg {
+      width: 100%;
+      height: 100%;
+      display: block;
+    }
+    .analog-digital-sub {
+      font-size: 21px;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      opacity: 0.88;
+      margin-top: 4px;
+    }
+
+    /* Clock Sub-Metadata */
+    .clock-date-summary {
+      margin-top: 18px;
+      text-align: center;
+    }
+    .clock-weekday {
+      font-size: 22px;
+      font-weight: 600;
+      margin-bottom: 3px;
+    }
+    .clock-fulldate {
+      font-size: 17px;
+      opacity: 0.82;
+    }
+    .clock-extra-row {
+      margin-top: 10px;
+      display: -webkit-box;
+      display: -webkit-flex;
+      display: flex;
+      -webkit-flex-wrap: wrap;
+      flex-wrap: wrap;
+      -webkit-box-pack: center;
+      -webkit-justify-content: center;
+      justify-content: center;
+      font-size: 12.5px;
+      opacity: 0.75;
+    }
+    .extra-chip {
+      padding: 3px 10px;
+      margin: 3px 4px;
+      border-radius: 999px;
+      border: 1px solid rgba(128,128,128,0.26);
+      background: rgba(128,128,128,0.08);
+    }
+
+    /* Calendar Panel */
+    .panel-calendar {
+      -webkit-box-pack: justify;
+      -webkit-justify-content: space-between;
+      justify-content: space-between;
+    }
+    .cal-header {
+      display: -webkit-box;
+      display: -webkit-flex;
+      display: flex;
+      -webkit-box-align: center;
+      -webkit-align-items: center;
+      align-items: center;
+      -webkit-box-pack: justify;
+      -webkit-justify-content: space-between;
+      justify-content: space-between;
+      margin-bottom: 10px;
+    }
+    .cal-month-btn {
+      font: inherit;
+      font-size: 23px;
+      font-weight: 700;
+      line-height: 1.2;
+      background: transparent;
+      border: none;
+      color: inherit;
+      padding: 2px 6px 2px 0;
+      cursor: pointer;
+      text-align: left;
+    }
+    .cal-month-btn:hover {
+      opacity: 0.82;
+    }
+    .cal-mini-clock {
+      font-size: 14px;
+      font-weight: 600;
+      opacity: 0.78;
+      margin-top: 2px;
+      display: none;
+    }
+    .stage-calendar-only .cal-mini-clock {
+      display: block;
+      font-size: 15px;
+    }
+    .cal-jump-bar {
+      display: none;
+      padding: 8px 10px;
+      margin-bottom: 10px;
+      border-radius: 10px;
+      background: rgba(128,128,128,0.14);
+      -webkit-box-align: center;
+      -webkit-align-items: center;
+      align-items: center;
+      -webkit-box-pack: justify;
+      -webkit-justify-content: space-between;
+      justify-content: space-between;
+    }
+    .cal-jump-bar.open {
+      display: -webkit-box;
+      display: -webkit-flex;
+      display: flex;
+    }
+    .jump-select {
+      font: inherit;
+      font-size: 13px;
+      padding: 5px 8px;
+      border-radius: 8px;
+      border: 1px solid rgba(128,128,128,0.35);
+      background: #1e293b;
+      color: #f8fafc;
+      margin-right: 6px;
+    }
+
+    .cal-nav {
+      display: -webkit-box;
+      display: -webkit-flex;
+      display: flex;
+      -webkit-box-align: center;
+      -webkit-align-items: center;
+      align-items: center;
+    }
+    .cal-nav-btn {
+      font: inherit;
+      font-size: 13px;
+      font-weight: 600;
+      padding: 6px 11px;
+      margin-left: 5px;
+      border-radius: 9px;
+      border: 1px solid rgba(128,128,128,0.28);
+      background: rgba(128,128,128,0.10);
+      color: inherit;
+      cursor: pointer;
+    }
+    .cal-nav-btn:hover {
+      background: rgba(128,128,128,0.22);
+    }
+
+    /* Calendar Table */
+    .cal-table {
+      width: 100%;
+      border-collapse: separate;
+      border-spacing: 4px;
+      table-layout: fixed;
+    }
+    .cal-table th {
+      font-size: 12.5px;
+      font-weight: 600;
+      opacity: 0.68;
+      padding: 4px 2px 8px 2px;
+      text-align: center;
+      text-transform: uppercase;
+      letter-spacing: 0.04em;
+    }
+    .cal-cell {
+      text-align: center;
+      vertical-align: middle;
+      height: 44px;
+      border-radius: 11px;
+      cursor: pointer;
+      position: relative;
+      font-size: 15.5px;
+      font-weight: 500;
+      -webkit-transition: background 0.15s ease;
+      transition: background 0.15s ease;
+    }
+    .cal-size-large .cal-cell {
+      height: 52px;
+      font-size: 18.5px;
+      font-weight: 600;
+    }
+    .cal-cell:hover {
+      background: rgba(128,128,128,0.16);
+    }
+    .cal-cell.other-month {
+      opacity: 0.26;
+    }
+    .cal-cell.is-selected {
+      box-shadow: inset 0 0 0 2px currentColor;
+    }
+    .cal-cell.is-today {
+      font-weight: 700;
+    }
+    .cal-dots-wrap {
+      display: -webkit-box;
+      display: -webkit-flex;
+      display: flex;
+      -webkit-box-pack: center;
+      -webkit-justify-content: center;
+      justify-content: center;
+      margin-top: 2px;
+      height: 5px;
+    }
+    .cal-note-dot {
+      display: inline-block;
+      width: 5px;
+      height: 5px;
+      border-radius: 50%;
+      margin: 0 1px;
+    }
+
+    /* Agenda / Notes Box */
+    .agenda-box {
+      margin-top: 14px;
+      padding-top: 12px;
+      border-top: 1px solid rgba(128,128,128,0.22);
+    }
+    .agenda-header {
+      display: -webkit-box;
+      display: -webkit-flex;
+      display: flex;
+      -webkit-box-align: center;
+      -webkit-align-items: center;
+      align-items: center;
+      -webkit-box-pack: justify;
+      -webkit-justify-content: space-between;
+      justify-content: space-between;
+      -webkit-flex-wrap: wrap;
+      flex-wrap: wrap;
+      margin-bottom: 6px;
+      font-size: 13.5px;
+      font-weight: 600;
+    }
+    .holiday-badge {
+      font-size: 11.5px;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background: rgba(245, 158, 11, 0.18);
+      border: 1px solid rgba(245, 158, 11, 0.45);
+    }
+    .agenda-list {
+      list-style: none;
+      margin: 0 0 8px 0;
+      padding: 0;
+      max-height: 112px;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .agenda-empty {
+      font-size: 12.5px;
+      opacity: 0.6;
+      padding: 3px 0 6px 0;
+    }
+    .agenda-item {
+      display: -webkit-box;
+      display: -webkit-flex;
+      display: flex;
+      -webkit-box-align: center;
+      -webkit-align-items: center;
+      align-items: center;
+      -webkit-box-pack: justify;
+      -webkit-justify-content: space-between;
+      justify-content: space-between;
+      padding: 5px 9px;
+      margin-bottom: 4px;
+      border-radius: 8px;
+      background: rgba(128,128,128,0.12);
+      font-size: 13px;
+    }
+    .agenda-item-left {
+      display: -webkit-box;
+      display: -webkit-flex;
+      display: flex;
+      -webkit-box-align: center;
+      -webkit-align-items: center;
+      align-items: center;
+      -webkit-box-flex: 1;
+      -webkit-flex: 1;
+      flex: 1;
+      cursor: pointer;
+    }
+    .note-tag-dot {
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      margin-right: 8px;
+      -webkit-flex-shrink: 0;
+      flex-shrink: 0;
+    }
+    .note-done-text {
+      text-decoration: line-through;
+      opacity: 0.52;
+    }
+    .agenda-act-btn {
+      background: transparent;
+      border: none;
+      color: inherit;
+      opacity: 0.62;
+      cursor: pointer;
+      font-size: 13px;
+      padding: 2px 5px;
+    }
+    .agenda-act-btn:hover {
+      opacity: 1;
+    }
+    .agenda-form {
+      display: -webkit-box;
+      display: -webkit-flex;
+      display: flex;
+      -webkit-box-align: center;
+      -webkit-align-items: center;
+      align-items: center;
+    }
+    .prio-btn {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      border: 2px solid transparent;
+      margin-right: 5px;
+      cursor: pointer;
+      padding: 0;
+      -webkit-flex-shrink: 0;
+      flex-shrink: 0;
+    }
+    .prio-btn.selected {
+      border-color: currentColor;
+      -webkit-transform: scale(1.12);
+      transform: scale(1.12);
+    }
+    .agenda-input {
+      -webkit-box-flex: 1;
+      -webkit-flex: 1;
+      flex: 1;
+      font: inherit;
+      font-size: 13px;
+      padding: 7px 10px;
+      border-radius: 9px;
+      border: 1px solid rgba(128,128,128,0.3);
+      background: rgba(128,128,128,0.1);
+      color: inherit;
+      outline: none;
+    }
+    .agenda-add-btn {
+      font: inherit;
+      font-size: 12.5px;
+      font-weight: 600;
+      margin-left: 6px;
+      padding: 7px 12px;
+      border-radius: 9px;
+      border: none;
+      cursor: pointer;
+    }
+
+    /* Backdrop, Drawer & Modals */
+    .backdrop {
+      position: fixed;
+      top: 0; left: 0; right: 0; bottom: 0;
+      z-index: 500;
+      background: rgba(0,0,0,0.58);
+      opacity: 0;
+      pointer-events: none;
+      -webkit-transition: opacity 0.25s ease;
+      transition: opacity 0.25s ease;
+    }
+    .backdrop.open {
+      opacity: 1;
+      pointer-events: auto;
+    }
+
+    .drawer {
+      position: fixed;
+      top: 0;
+      right: 0;
+      bottom: 0;
+      width: 410px;
+      max-width: 94vw;
+      z-index: 600;
+      background: #131822;
+      color: #f1f5f9;
+      border-left: 1px solid rgba(255,255,255,0.12);
+      box-shadow: -12px 0 36px rgba(0,0,0,0.55);
+      display: -webkit-box;
+      display: -webkit-flex;
+      display: flex;
+      -webkit-box-orient: vertical;
+      -webkit-box-direction: normal;
+      -webkit-flex-direction: column;
+      flex-direction: column;
+      -webkit-transform: translateX(102%);
+      transform: translateX(102%);
+      -webkit-transition: -webkit-transform 0.28s ease;
+      transition: transform 0.28s ease;
+      font-family: 'Prompt', 'Avenir Next', 'Helvetica Neue', sans-serif;
+    }
+    .drawer.open {
+      -webkit-transform: translateX(0);
+      transform: translateX(0);
+    }
+
+    .drawer-header {
+      padding: 14px 18px;
+      border-bottom: 1px solid rgba(255,255,255,0.1);
+      display: -webkit-box;
+      display: -webkit-flex;
+      display: flex;
+      -webkit-box-align: center;
+      -webkit-align-items: center;
+      align-items: center;
+      -webkit-box-pack: justify;
+      -webkit-justify-content: space-between;
+      justify-content: space-between;
+    }
+    .drawer-title {
+      font-size: 16px;
+      font-weight: 700;
+    }
+    .drawer-close {
+      background: rgba(255,255,255,0.1);
+      border: none;
+      color: #ffffff;
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      font-size: 18px;
+      cursor: pointer;
+    }
+
+    .drawer-tabs {
+      display: -webkit-box;
+      display: -webkit-flex;
+      display: flex;
+      padding: 8px 10px 0 10px;
+      border-bottom: 1px solid rgba(255,255,255,0.08);
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+    .drawer-tab {
+      font: inherit;
+      font-size: 12.5px;
+      font-weight: 600;
+      padding: 7px 10px 9px 10px;
+      background: transparent;
+      border: none;
+      border-bottom: 2px solid transparent;
+      color: #94a3b8;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .drawer-tab.active {
+      color: #ffffff;
+      border-bottom-color: #38bdf8;
+    }
+    .drawer-tab.tab-night-highlight {
+      color: #fca5a5;
+    }
+    .drawer-tab.tab-night-highlight.active {
+      color: #fecaca;
+      border-bottom-color: #ef4444;
+    }
+
+    .drawer-body {
+      -webkit-box-flex: 1;
+      -webkit-flex: 1;
+      flex: 1;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      padding: 16px 18px 26px 18px;
+    }
+    .tab-pane {
+      display: none;
+    }
+    .tab-pane.active {
+      display: block;
+    }
+
+    .ctrl-group {
+      margin-bottom: 18px;
+    }
+    .ctrl-label {
+      display: -webkit-box;
+      display: -webkit-flex;
+      display: flex;
+      -webkit-box-pack: justify;
+      -webkit-justify-content: space-between;
+      justify-content: space-between;
+      font-size: 12.5px;
+      font-weight: 600;
+      color: #cbd5e1;
+      margin-bottom: 7px;
+    }
+    .ctrl-val {
+      color: #38bdf8;
+      font-weight: 600;
+    }
+
+    .night-card-banner {
+      padding: 12px 14px;
+      border-radius: 12px;
+      background: rgba(153, 27, 27, 0.22);
+      border: 1px solid rgba(239, 68, 68, 0.4);
+      margin-bottom: 16px;
+      font-size: 12.5px;
+      color: #fecaca;
+    }
+
+    .time-range-box {
+      display: -webkit-box;
+      display: -webkit-flex;
+      display: flex;
+      -webkit-box-align: center;
+      -webkit-align-items: center;
+      align-items: center;
+      -webkit-box-pack: justify;
+      -webkit-justify-content: space-between;
+      justify-content: space-between;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.12);
+      border-radius: 12px;
+      padding: 10px 12px;
+    }
+    .time-pick-col {
+      display: -webkit-box;
+      display: -webkit-flex;
+      display: flex;
+      -webkit-box-orient: vertical;
+      -webkit-box-direction: normal;
+      -webkit-flex-direction: column;
+      flex-direction: column;
+    }
+    .time-pick-col small {
+      font-size: 11px;
+      color: #94a3b8;
+      margin-bottom: 4px;
+    }
+    .time-select-group {
+      display: -webkit-box;
+      display: -webkit-flex;
+      display: flex;
+      -webkit-box-align: center;
+      -webkit-align-items: center;
+      align-items: center;
+    }
+    .time-select {
+      font: inherit;
+      font-size: 14px;
+      font-weight: 700;
+      padding: 6px 8px;
+      border-radius: 8px;
+      border: 1px solid rgba(255,255,255,0.2);
+      background: #0f172a;
+      color: #ffffff;
+    }
+
+    .opt-grid {
+      display: -webkit-box;
+      display: -webkit-flex;
+      display: flex;
+      -webkit-flex-wrap: wrap;
+      flex-wrap: wrap;
+      margin: -4px;
+    }
+    .opt-btn {
+      font: inherit;
+      font-size: 12.5px;
+      font-weight: 500;
+      margin: 4px;
+      padding: 8px 10px;
+      -webkit-box-flex: 1;
+      -webkit-flex: 1 1 44%;
+      flex: 1 1 44%;
+      border-radius: 10px;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.04);
+      color: #e2e8f0;
+      cursor: pointer;
+      text-align: center;
+    }
+    .opt-btn.opt-3col {
+      -webkit-flex: 1 1 29%;
+      flex: 1 1 29%;
+    }
+    .opt-btn:hover {
+      background: rgba(255,255,255,0.1);
+    }
+    .opt-btn.selected {
+      background: rgba(56, 189, 248, 0.2);
+      border-color: #38bdf8;
+      color: #ffffff;
+      font-weight: 600;
+    }
+    .opt-btn.selected-red {
+      background: rgba(220, 38, 38, 0.28);
+      border-color: #ef4444;
+      color: #fecaca;
+      font-weight: 600;
+    }
+
+    .swatch-row {
+      display: -webkit-box;
+      display: -webkit-flex;
+      display: flex;
+      -webkit-flex-wrap: wrap;
+      flex-wrap: wrap;
+      -webkit-box-align: center;
+      -webkit-align-items: center;
+      align-items: center;
+    }
+    .swatch {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      margin: 0 7px 7px 0;
+      border: 2px solid rgba(255,255,255,0.22);
+      cursor: pointer;
+      padding: 0;
+    }
+    .swatch.selected {
+      border-color: #ffffff;
+      box-shadow: 0 0 0 2px #38bdf8;
+    }
+    .color-input-native {
+      width: 34px;
+      height: 30px;
+      padding: 0;
+      border: 1px solid rgba(255,255,255,0.25);
+      border-radius: 8px;
+      background: transparent;
+      cursor: pointer;
+      margin-bottom: 7px;
+    }
+
+    .preset-card {
+      font: inherit;
+      font-size: 12px;
+      font-weight: 600;
+      margin: 4px;
+      padding: 11px 10px;
+      -webkit-box-flex: 1;
+      -webkit-flex: 1 1 44%;
+      flex: 1 1 44%;
+      border-radius: 10px;
+      border: 2px solid rgba(255,255,255,0.14);
+      cursor: pointer;
+      text-align: left;
+    }
+    .preset-card.selected {
+      border-color: #38bdf8;
+    }
+
+    .range-slider {
+      width: 100%;
+      cursor: pointer;
+    }
+    .text-field {
+      width: 100%;
+      font: inherit;
+      font-size: 13px;
+      padding: 8px 11px;
+      border-radius: 9px;
+      border: 1px solid rgba(255,255,255,0.16);
+      background: rgba(255,255,255,0.06);
+      color: #ffffff;
+      outline: none;
+    }
+
+    .switch-row {
+      display: -webkit-box;
+      display: -webkit-flex;
+      display: flex;
+      -webkit-box-align: center;
+      -webkit-align-items: center;
+      align-items: center;
+      -webkit-box-pack: justify;
+      -webkit-justify-content: space-between;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(255,255,255,0.06);
+      font-size: 12.5px;
+    }
+    .toggle-btn {
+      font: inherit;
+      font-size: 11.5px;
+      font-weight: 700;
+      padding: 5px 11px;
+      border-radius: 999px;
+      border: 1px solid rgba(255,255,255,0.2);
+      background: rgba(255,255,255,0.08);
+      color: #94a3b8;
+      cursor: pointer;
+    }
+    .toggle-btn.on {
+      background: #0284c7;
+      border-color: #38bdf8;
+      color: #ffffff;
+    }
+
+    .contrast-warn {
+      display: none;
+      margin-top: 8px;
+      padding: 8px 10px;
+      border-radius: 9px;
+      background: rgba(245, 158, 11, 0.16);
+      border: 1px solid rgba(245, 158, 11, 0.45);
+      color: #fde68a;
+      font-size: 12px;
+      -webkit-box-align: center;
+      -webkit-align-items: center;
+      align-items: center;
+      -webkit-box-pack: justify;
+      -webkit-justify-content: space-between;
+      justify-content: space-between;
+    }
+
+    .slot-row {
+      display: -webkit-box;
+      display: -webkit-flex;
+      display: flex;
+      margin: -3px;
+    }
+    .slot-box {
+      -webkit-box-flex: 1;
+      -webkit-flex: 1;
+      flex: 1;
+      margin: 3px;
+      padding: 8px;
+      border-radius: 10px;
+      background: rgba(255,255,255,0.04);
+      border: 1px solid rgba(255,255,255,0.1);
+      text-align: center;
+      font-size: 11.5px;
+    }
+    .slot-mini-btn {
+      font: inherit;
+      font-size: 11px;
+      padding: 4px 7px;
+      margin: 4px 2px 0 2px;
+      border-radius: 6px;
+      border: 1px solid rgba(255,255,255,0.18);
+      background: rgba(255,255,255,0.08);
+      color: #e2e8f0;
+      cursor: pointer;
+    }
+
+    .drawer-footer {
+      padding: 11px 18px;
+      border-top: 1px solid rgba(255,255,255,0.1);
+      display: -webkit-box;
+      display: -webkit-flex;
+      display: flex;
+      -webkit-box-align: center;
+      -webkit-align-items: center;
+      align-items: center;
+      -webkit-box-pack: justify;
+      -webkit-justify-content: space-between;
+      justify-content: space-between;
+    }
+    .reset-btn {
+      font: inherit;
+      font-size: 12px;
+      padding: 7px 11px;
+      border-radius: 8px;
+      border: 1px solid rgba(248,113,113,0.4);
+      background: rgba(248,113,113,0.12);
+      color: #fca5a5;
+      cursor: pointer;
+    }
+    .reset-confirm-bar {
+      display: none;
+      padding: 10px 18px;
+      background: #450a0a;
+      border-top: 1px solid #ef4444;
+      color: #fecaca;
+      font-size: 12.5px;
+      -webkit-box-align: center;
+      -webkit-align-items: center;
+      align-items: center;
+      -webkit-box-pack: justify;
+      -webkit-justify-content: space-between;
+      justify-content: space-between;
+    }
+    .reset-confirm-bar.open {
+      display: -webkit-box;
+      display: -webkit-flex;
+      display: flex;
+    }
+
+    /* Modals */
+    .modal-box {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      -webkit-transform: translate(-50%, -50%);
+      transform: translate(-50%, -50%);
+      width: 520px;
+      max-width: 92vw;
+      max-height: 86vh;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      z-index: 700;
+      background: #161c28;
+      color: #f1f5f9;
+      border-radius: 18px;
+      border: 1px solid rgba(255,255,255,0.14);
+      padding: 22px;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.65);
+      display: none;
+      font-family: 'Prompt', 'Avenir Next', 'Helvetica Neue', sans-serif;
+    }
+    .modal-box.open {
+      display: block;
+    }
+    .guide-step {
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.08);
+      border-radius: 12px;
+      padding: 11px 13px;
+      margin-bottom: 9px;
+      font-size: 13px;
+      line-height: 1.55;
+    }
+    .guide-step strong {
+      color: #38bdf8;
+    }
+  </style>
+</head>
+<body>
+  <!-- Background & Lighting Layers -->
+  <div id="bg-layer"></div>
+  <div id="pattern-layer"></div>
+  <div id="bg-tint-layer"></div>
+  <div id="dimmer-layer"></div>
+
+  <!-- Restore button when in Zen Full-Screen Mode -->
+  <button type="button" id="zen-restore" class="zen-restore-btn" title="แสดงแถบเมนู">แตะแสดงเมนู</button>
+
+  <div id="app-shell">
+    <!-- Top Control Bar -->
+    <header id="topbar" class="topbar">
+      <div class="brand-group">
+        <span id="greeting-display" class="greeting-text"></span>
+        <span id="desk-label-display" class="desk-label">Desk Clock &amp; Calendar</span>
+        <span id="night-status-pill" class="status-pill" title="คลิกเพื่อตั้งค่าเวลาโหมดกลางคืน"></span>
+        <span id="timer-status-pill" class="status-pill" style="display:none;" title="คลิกเพื่อจัดการปลุก/จับเวลา"></span>
+      </div>
+      <div class="topbar-actions">
+        <button type="button" id="btn-quick-night" class="icon-btn" title="สลับโหมดกลางคืนตัวหนังสือสีแดง (คีย์ลัด N)">
+          <svg viewBox="0 0 24 24"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
+          <span id="lbl-quick-night" class="btn-label-hide-sm">โหมดสีแดง</span>
+        </button>
+        <button type="button" id="btn-alarm-modal" class="icon-btn" title="ตั้งปลุก &amp; จับเวลา">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="13" r="8"></circle><path d="M12 9v4l2 2"></path><path d="M5 3 2 6"></path><path d="m22 6-3-3"></path></svg>
+          <span class="btn-label-hide-sm">ตั้งปลุก/นับเวลา</span>
+        </button>
+        <button type="button" id="btn-ipad-guide" class="icon-btn" title="วิธีนำไปใช้บน iPad 2">
+          <svg viewBox="0 0 24 24"><rect x="4" y="2" width="16" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg>
+          <span class="btn-label-hide-sm">iPad 2</span>
+        </button>
+        <button type="button" id="btn-zen" class="icon-btn" title="โหมดเต็มจอซ่อนปุ่มอัตโนมัติ (คีย์ลัด F)">
+          <svg viewBox="0 0 24 24"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"></path></svg>
+          <span class="btn-label-hide-sm">เต็มจอ</span>
+        </button>
+        <button type="button" id="btn-open-settings" class="icon-btn primary-accent" title="ตั้งค่ารูปแบบและเวลาแสดงผล (คีย์ลัด S)">
+          <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+          <span class="btn-text-keep">ปรับแต่ง</span>
+        </button>
+      </div>
+    </header>
+
+    <!-- Non-blocking Ringing Banner for Alarm / Timer -->
+    <div id="ring-banner" class="ring-banner" role="status">
+      <div>
+        <strong id="ring-title" style="font-size:15px;">ถึงเวลาที่ตั้งไว้แล้ว!</strong>
+        <div id="ring-sub" style="font-size:12.5px;opacity:0.9;">แตะปุ่มด้านขวาเพื่อปิดเสียงเตือน</div>
+      </div>
+      <div style="display:-webkit-flex;display:flex;">
+        <button type="button" id="btn-snooze-ring" class="icon-btn" style="background:rgba(255,255,255,0.16);color:#fff;margin-right:6px;">เลื่อนปลุก 5 นาที</button>
+        <button type="button" id="btn-dismiss-ring" class="icon-btn" style="background:#ffffff;color:#991b1b;border:none;">ปิดแจ้งเตือน</button>
+      </div>
+    </div>
+
+    <!-- Anti-Burn-In Pixel Shift Wrapper + Main Stage -->
+    <div id="stage-shift-wrap">
+      <main id="stage" class="stage-split">
+        <!-- CLOCK PANEL -->
+        <section id="panel-clock" class="surface-card panel-clock">
+          <div id="clock-scale-wrap">
+            <div id="clock-render"></div>
+            <div id="clock-date-summary" class="clock-date-summary">
+              <div id="clock-weekday" class="clock-weekday"></div>
+              <div id="clock-fulldate" class="clock-fulldate"></div>
+            </div>
+            <div id="clock-extra-row" class="clock-extra-row"></div>
+          </div>
+        </section>
+
+        <!-- CALENDAR PANEL -->
+        <section id="panel-calendar" class="surface-card panel-calendar">
+          <div>
+            <div class="cal-header">
+              <div>
+                <button type="button" id="cal-month-title" class="cal-month-btn" title="คลิกเพื่อเลือกเดือน/ปีอย่างรวดเร็ว"></button>
+                <div id="cal-mini-clock" class="cal-mini-clock tabular-nums"></div>
+              </div>
+              <div class="cal-nav">
+                <button type="button" id="cal-prev" class="cal-nav-btn" aria-label="เดือนก่อนหน้า">&lsaquo;</button>
+                <button type="button" id="cal-today" class="cal-nav-btn">วันนี้</button>
+                <button type="button" id="cal-next" class="cal-nav-btn" aria-label="เดือนถัดไป">&rsaquo;</button>
+              </div>
+            </div>
+
+            <!-- Quick Month / Year Jump Bar -->
+            <div id="cal-jump-bar" class="cal-jump-bar">
+              <div style="display:-webkit-flex;display:flex;-webkit-align-items:center;align-items:center;">
+                <select id="jump-month" class="jump-select" aria-label="เลือกเดือน"></select>
+                <select id="jump-year" class="jump-select" aria-label="เลือกปี"></select>
+              </div>
+              <button type="button" id="jump-close" class="cal-nav-btn">ตกลง</button>
+            </div>
+
+            <table id="cal-table" class="cal-table" aria-label="ปฏิทินรายเดือน">
+              <thead>
+                <tr id="cal-thead-row"></tr>
+              </thead>
+              <tbody id="cal-tbody"></tbody>
+            </table>
+          </div>
+
+          <!-- Personal Day Notes & Upcoming Preview -->
+          <div id="agenda-box" class="agenda-box">
+            <div class="agenda-header">
+              <span id="agenda-date-label">บันทึกประจำวัน</span>
+              <span id="holiday-label" class="holiday-badge" style="display:none;"></span>
+            </div>
+            <ul id="agenda-list" class="agenda-list"></ul>
+            <form id="agenda-form" class="agenda-form">
+              <button type="button" class="prio-btn selected" data-prio="#38bdf8" style="background:#38bdf8;" title="ทั่วไป"></button>
+              <button type="button" class="prio-btn" data-prio="#f59e0b" style="background:#f59e0b;" title="สำคัญ"></button>
+              <button type="button" class="prio-btn" data-prio="#10b981" style="background:#10b981;" title="ส่วนตัว"></button>
+              <input type="text" id="agenda-input" class="agenda-input" placeholder="เพิ่มนัดหมายหรือบันทึกสั้นๆ..." maxlength="90">
+              <button type="submit" id="agenda-add-btn" class="agenda-add-btn">เพิ่ม</button>
+            </form>
+          </div>
+        </section>
+      </main>
+    </div>
+  </div>
+
+  <!-- Shared Backdrop -->
+  <div id="backdrop" class="backdrop"></div>
+
+  <!-- Customization Drawer -->
+  <aside id="settings-drawer" class="drawer" aria-label="ตั้งค่ารูปแบบการแสดงผล">
+    <div class="drawer-header">
+      <div class="drawer-title">ปรับแต่งนาฬิกา &amp; เวลาแสดงผล</div>
+      <button type="button" id="drawer-close" class="drawer-close" aria-label="ปิด">&times;</button>
+    </div>
+
+    <div class="drawer-tabs">
+      <button type="button" class="drawer-tab tab-night-highlight active" data-tab="tab-night">โหมดสีแดงกลางคืน</button>
+      <button type="button" class="drawer-tab" data-tab="tab-layout">หน้าปัด &amp; เลย์เอาต์</button>
+      <button type="button" class="drawer-tab" data-tab="tab-colors">ธีม &amp; สี</button>
+      <button type="button" class="drawer-tab" data-tab="tab-font">ฟอนต์ &amp; ปฏิทิน</button>
+      <button type="button" class="drawer-tab" data-tab="tab-bg">พื้นหลัง</button>
+      <button type="button" class="drawer-tab" data-tab="tab-more">เสียง &amp; ระบบ</button>
+    </div>
+
+    <div class="drawer-body">
+      <!-- TAB 1: RED NIGHT MODE & SCHEDULE -->
+      <div id="tab-night" class="tab-pane active">
+        <div class="night-card-banner">
+          <strong>โหมดถนอมสายตาสำหรับการนอนหลับ:</strong> เปลี่ยนตัวหนังสือเป็นสีแดงและตัดพื้นหลังเป็น <strong>สีดำสนิท (#000000)</strong> เพื่อไม่รบกวนสายตาในห้องมืด และสลับกลับเป็นธีมปกติอัตโนมัติในตอนเช้า
+        </div>
+
+        <div class="ctrl-group">
+          <div class="ctrl-label"><span>การทำงานของโหมดตัวหนังสือสีแดง</span></div>
+          <div class="opt-grid" id="opt-night-policy">
+            <button type="button" class="opt-btn opt-3col" data-val="scheduled">ตั้งเวลาอัตโนมัติ</button>
+            <button type="button" class="opt-btn opt-3col" data-val="on">เปิดสีแดงตลอด</button>
+            <button type="button" class="opt-btn opt-3col" data-val="off">ปิดโหมดสีแดง</button>
+          </div>
+        </div>
+
+        <div id="night-schedule-group" class="ctrl-group">
+          <div class="ctrl-label">
+            <span>ช่วงเวลาแสดงผลโหมดกลางคืนสีแดง</span>
+            <span id="val-night-window" class="ctrl-val" style="color:#fca5a5;">22:00 - 06:00</span>
+          </div>
+          <div class="time-range-box">
+            <div class="time-pick-col">
+              <small>เริ่มโหมดสีแดง (เข้านอน)</small>
+              <div class="time-select-group">
+                <select id="sel-night-sh" class="time-select" aria-label="ชั่วโมงเริ่ม"></select>
+                <span style="margin:0 4px;font-weight:700;">:</span>
+                <select id="sel-night-sm" class="time-select" aria-label="นาทีเริ่ม"></select>
+              </div>
+            </div>
+            <span style="font-size:16px;opacity:0.6;">&rarr;</span>
+            <div class="time-pick-col">
+              <small>กลับสู่โหมดปกติ (ตื่นนอน)</small>
+              <div class="time-select-group">
+                <select id="sel-night-eh" class="time-select" aria-label="ชั่วโมงสิ้นสุด"></select>
+                <span style="margin:0 4px;font-weight:700;">:</span>
+                <select id="sel-night-em" class="time-select" aria-label="นาทีสิ้นสุด"></select>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="ctrl-group">
+          <div class="ctrl-label"><span>เฉดสีแดงเวลากลางคืน (Red Wavelength)</span></div>
+          <div class="opt-grid" id="opt-night-shade">
+            <button type="button" class="opt-btn opt-3col" data-val="#ef4444" style="color:#ef4444;">แดงชัด (#EF4444)</button>
+            <button type="button" class="opt-btn opt-3col" data-val="#dc2626" style="color:#dc2626;">แดงเข้ม (#DC2626)</button>
+            <button type="button" class="opt-btn opt-3col" data-val="#991b1b" style="color:#f87171;">แดงมืดพิเศษ</button>
+          </div>
+        </div>
+
+        <div class="ctrl-group">
+          <div class="ctrl-label">
+            <span>ความสว่างตัวอักษรสีแดงกลางคืน</span>
+            <span id="val-night-bright" class="ctrl-val" style="color:#fca5a5;">75%</span>
+          </div>
+          <input type="range" id="inp-night-bright" class="range-slider" min="20" max="100" step="5" value="75">
+        </div>
+
+        <div class="ctrl-group">
+          <div class="switch-row">
+            <span>ซ่อนเส้นขอบการ์ดทั้งหมดในโหมดกลางคืน (ดำล้วน 100%)</span>
+            <button type="button" id="tog-night-borderless" class="toggle-btn on">เปิด</button>
+          </div>
+          <div class="switch-row">
+            <span>ซ่อนปฏิทินอัตโนมัติเวลากลางคืน (โชว์เฉพาะนาฬิกา)</span>
+            <button type="button" id="tog-night-hidecal" class="toggle-btn">ปิด</button>
+          </div>
+          <div class="switch-row">
+            <span>ซ่อนวินาทีและหยุดจุดกะพริบเวลากลางคืน (ลดแสงกวนตา)</span>
+            <button type="button" id="tog-night-calm" class="toggle-btn on">เปิด</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 2: LAYOUT & CLOCK FACES -->
+      <div id="tab-layout" class="tab-pane">
+        <div class="ctrl-group">
+          <div class="ctrl-label"><span>การจัดวางหน้าจอ (Screen Layout)</span></div>
+          <div class="opt-grid" id="opt-layout">
+            <button type="button" class="opt-btn" data-val="split">คู่ขนาน (ซ้าย-ขวา)</button>
+            <button type="button" class="opt-btn" data-val="stacked">วางซ้อน (บน-ล่าง)</button>
+            <button type="button" class="opt-btn" data-val="clock-only">เน้นนาฬิกาเต็มจอ</button>
+            <button type="button" class="opt-btn" data-val="calendar-only">เน้นปฏิทินเต็มจอ</button>
+          </div>
+          <div class="switch-row" style="margin-top:6px;">
+            <span>สลับฝั่งตำแหน่ง นาฬิกา &harr; ปฏิทิน</span>
+            <button type="button" id="tog-swap" class="toggle-btn">ปกติ</button>
+          </div>
+        </div>
+
+        <div class="ctrl-group">
+          <div class="ctrl-label"><span>รูปแบบหน้าปัดนาฬิกา (6 Clock Styles)</span></div>
+          <div class="opt-grid" id="opt-clock-style">
+            <button type="button" class="opt-btn" data-val="digital">ดิจิทัลคลาสสิก</button>
+            <button type="button" class="opt-btn" data-val="standby">ตัวเลขใหญ่ข้างเตียง</button>
+            <button type="button" class="opt-btn" data-val="progress">ดิจิทัล + แถบวินาที</button>
+            <button type="button" class="opt-btn" data-val="flip">แผ่นพับเรโทร (Flip)</button>
+            <button type="button" class="opt-btn" data-val="analog">นาฬิกาเข็ม (Analog)</button>
+            <button type="button" class="opt-btn" data-val="minimal">มินิมอลซ้อนตัวเลข</button>
+          </div>
+        </div>
+
+        <div class="ctrl-group">
+          <div class="ctrl-label">
+            <span>ขนาดนาฬิกา (Clock Scale)</span>
+            <span id="val-clock-scale" class="ctrl-val">100%</span>
+          </div>
+          <input type="range" id="inp-clock-scale" class="range-slider" min="70" max="140" step="5" value="100">
+        </div>
+
+        <div class="ctrl-group">
+          <div class="ctrl-label"><span>ความหนาตัวเลขนาฬิกา (Clock Weight)</span></div>
+          <div class="opt-grid" id="opt-clock-weight">
+            <button type="button" class="opt-btn opt-3col" data-val="300">บาง (Light)</button>
+            <button type="button" class="opt-btn opt-3col" data-val="600">กลาง (Semi)</button>
+            <button type="button" class="opt-btn opt-3col" data-val="700">หนา (Bold)</button>
+          </div>
+        </div>
+
+        <div class="ctrl-group">
+          <div class="switch-row">
+            <span>ระบบเวลาแบบ 24 ชั่วโมง</span>
+            <button type="button" id="tog-24h" class="toggle-btn on">24H</button>
+          </div>
+          <div class="switch-row">
+            <span>แสดงเลข 0 นำหน้าชั่วโมง (เช่น 07:30)</span>
+            <button type="button" id="tog-padzero" class="toggle-btn on">เปิด</button>
+          </div>
+          <div class="switch-row">
+            <span>แสดงวินาที (โหมดปกติ)</span>
+            <button type="button" id="tog-sec" class="toggle-btn on">เปิด</button>
+          </div>
+          <div class="switch-row">
+            <span>กะพริบจุดคั่นเวลา (:)</span>
+            <button type="button" id="tog-blink" class="toggle-btn on">เปิด</button>
+          </div>
+          <div class="switch-row">
+            <span>แสดงตัวเลข 1-12 บนหน้าปัดเข็ม Analog</span>
+            <button type="button" id="tog-analog-num" class="toggle-btn on">เปิด</button>
+          </div>
+          <div class="switch-row">
+            <span>แสดงเลขสัปดาห์ของปี &amp; เปอร์เซ็นต์ของวัน</span>
+            <button type="button" id="tog-dayprog" class="toggle-btn">ปิด</button>
+          </div>
+        </div>
+
+        <div class="ctrl-group">
+          <div class="ctrl-label"><span>นาฬิกาประเทศที่สอง (Secondary World Clock)</span></div>
+          <select id="sel-world-tz" class="text-field">
+            <option value="none">ไม่แสดงเวลาประเทศที่สอง</option>
+            <option value="UTC|0">UTC (เวลาสากล +00:00)</option>
+            <option value="Tokyo|9">Tokyo ญี่ปุ่น (UTC+9)</option>
+            <option value="Singapore/Beijing|8">Singapore / Beijing (UTC+8)</option>
+            <option value="London|0">London อังกฤษ (UTC+0)</option>
+            <option value="Paris/Berlin|1">Paris / Berlin ยุโรป (UTC+1)</option>
+            <option value="New York|-5">New York สหรัฐฯ (UTC-5)</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- TAB 3: THEME, COLORS & FAVORITE SLOTS -->
+      <div id="tab-colors" class="tab-pane">
+        <div class="ctrl-group">
+          <div class="ctrl-label"><span>โปรไฟล์ที่บันทึกไว้ 3 ช่อง (Quick Favorite Slots)</span></div>
+          <div class="slot-row">
+            <div class="slot-box">
+              <div><strong>ช่องโปรด 1</strong></div>
+              <button type="button" class="slot-mini-btn" data-slot-load="0">เรียกใช้</button>
+              <button type="button" class="slot-mini-btn" data-slot-save="0">บันทึกทับ</button>
+            </div>
+            <div class="slot-box">
+              <div><strong>ช่องโปรด 2</strong></div>
+              <button type="button" class="slot-mini-btn" data-slot-load="1">เรียกใช้</button>
+              <button type="button" class="slot-mini-btn" data-slot-save="1">บันทึกทับ</button>
+            </div>
+            <div class="slot-box">
+              <div><strong>ช่องโปรด 3</strong></div>
+              <button type="button" class="slot-mini-btn" data-slot-load="2">เรียกใช้</button>
+              <button type="button" class="slot-mini-btn" data-slot-save="2">บันทึกทับ</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="ctrl-group">
+          <div class="ctrl-label"><span>ธีมเวลากลางวันสำเร็จรูป (Daytime Themes)</span></div>
+          <div class="opt-grid" id="opt-themes">
+            <button type="button" class="preset-card" data-theme="obsidian" style="background:#0f141c;color:#f8fafc;">Obsidian Dark</button>
+            <button type="button" class="preset-card" data-theme="oled" style="background:#000000;color:#e2e8f0;">OLED Pure Black</button>
+            <button type="button" class="preset-card" data-theme="ivory" style="background:#f5f2eb;color:#1e293b;">Ivory Paper</button>
+            <button type="button" class="preset-card" data-theme="navy" style="background:#0c1e35;color:#e0f2fe;">Midnight Navy</button>
+            <button type="button" class="preset-card" data-theme="espresso" style="background:#231915;color:#fef3c7;">Warm Espresso</button>
+            <button type="button" class="preset-card" data-theme="sage" style="background:#eef3ef;color:#1b3124;">Soft Sage</button>
+          </div>
+        </div>
+
+        <div class="ctrl-group">
+          <div class="ctrl-label"><span>สีตัวอักษรโหมดปกติ (Text Color)</span></div>
+          <div class="swatch-row" id="swatches-text">
+            <button type="button" class="swatch" data-color="#f8fafc" style="background:#f8fafc;"></button>
+            <button type="button" class="swatch" data-color="#ef4444" style="background:#ef4444;" title="สีแดง"></button>
+            <button type="button" class="swatch" data-color="#fef08a" style="background:#fef08a;"></button>
+            <button type="button" class="swatch" data-color="#7dd3fc" style="background:#7dd3fc;"></button>
+            <button type="button" class="swatch" data-color="#86efac" style="background:#86efac;"></button>
+            <button type="button" class="swatch" data-color="#1e293b" style="background:#1e293b;"></button>
+            <input type="color" id="inp-text-color" class="color-input-native" value="#f8fafc">
+          </div>
+          <div id="contrast-warn" class="contrast-warn">
+            <span>สีตัวอักษรใกล้เคียงพื้นหลัง อาจอ่านยาก</span>
+            <button type="button" id="btn-fix-contrast" class="slot-mini-btn" style="margin:0;">ปรับให้อัตโนมัติ</button>
+          </div>
+        </div>
+
+        <div class="ctrl-group">
+          <div class="ctrl-label"><span>สีไฮไลต์และปุ่ม (Accent Color)</span></div>
+          <div class="swatch-row" id="swatches-accent">
+            <button type="button" class="swatch" data-color="#38bdf8" style="background:#38bdf8;"></button>
+            <button type="button" class="swatch" data-color="#ef4444" style="background:#ef4444;"></button>
+            <button type="button" class="swatch" data-color="#f59e0b" style="background:#f59e0b;"></button>
+            <button type="button" class="swatch" data-color="#10b981" style="background:#10b981;"></button>
+            <button type="button" class="swatch" data-color="#a855f7" style="background:#a855f7;"></button>
+            <button type="button" class="swatch" data-color="#2563eb" style="background:#2563eb;"></button>
+            <input type="color" id="inp-accent-color" class="color-input-native" value="#38bdf8">
+          </div>
+        </div>
+
+        <div class="ctrl-group">
+          <div class="ctrl-label">
+            <span>ความทึบการ์ดกรอบหลัง (Card Surface)</span>
+            <span id="val-card-alpha" class="ctrl-val">45%</span>
+          </div>
+          <input type="range" id="inp-card-alpha" class="range-slider" min="0" max="95" step="5" value="45">
+        </div>
+      </div>
+
+      <!-- TAB 4: FONTS & CALENDAR -->
+      <div id="tab-font" class="tab-pane">
+        <div class="ctrl-group">
+          <div class="ctrl-label"><span>แบบอักษรหลัก (Font Family)</span></div>
+          <div class="opt-grid" id="opt-font">
+            <button type="button" class="opt-btn" data-val="prompt" style="font-family:'Prompt','Thonburi',sans-serif;">Prompt ทันสมัย</button>
+            <button type="button" class="opt-btn" data-val="kanit" style="font-family:'Kanit','Helvetica Neue',sans-serif;">Kanit คมชัด</button>
+            <button type="button" class="opt-btn" data-val="system" style="font-family:'Avenir Next','Helvetica Neue',sans-serif;">iOS Classic Sans</button>
+            <button type="button" class="opt-btn" data-val="mono" style="font-family:'Space Mono','Courier New',monospace;">Digital Mono</button>
+            <button type="button" class="opt-btn" data-val="serif" style="font-family:'Playfair Display','Georgia',serif;">Editorial Serif</button>
+            <button type="button" class="opt-btn" data-val="inter" style="font-family:'Inter','Helvetica Neue',sans-serif;">Clean Geometric</button>
+          </div>
+        </div>
+
+        <div class="ctrl-group">
+          <div class="ctrl-label"><span>ภาษาและรูปแบบปีปฏิทิน</span></div>
+          <div class="opt-grid" id="opt-locale">
+            <button type="button" class="opt-btn opt-3col" data-val="th-be">ไทย (พ.ศ.)</button>
+            <button type="button" class="opt-btn opt-3col" data-val="th-ce">ไทย (ค.ศ.)</button>
+            <button type="button" class="opt-btn opt-3col" data-val="en-ce">English (CE)</button>
+          </div>
+        </div>
+
+        <div class="ctrl-group">
+          <div class="ctrl-label"><span>ขนาดช่องตัวเลขปฏิทิน</span></div>
+          <div class="opt-grid" id="opt-cal-size">
+            <button type="button" class="opt-btn" data-val="normal">ขนาดมาตรฐาน</button>
+            <button type="button" class="opt-btn" data-val="large">ตัวเลขใหญ่พิเศษ</button>
+          </div>
+        </div>
+
+        <div class="ctrl-group">
+          <div class="switch-row">
+            <span>เริ่มสัปดาห์ด้วยวันจันทร์</span>
+            <button type="button" id="tog-monday" class="toggle-btn">อาทิตย์</button>
+          </div>
+          <div class="switch-row">
+            <span>ไฮไลต์วันสำคัญ/วันหยุดหลักของไทย</span>
+            <button type="button" id="tog-holidays" class="toggle-btn on">เปิด</button>
+          </div>
+          <div class="switch-row">
+            <span>แสดงช่องบันทึกนัดหมายใต้ปฏิทิน</span>
+            <button type="button" id="tog-agenda" class="toggle-btn on">เปิด</button>
+          </div>
+          <div class="switch-row">
+            <span>แสดงนัดหมายถัดไปของเดือนเมื่อวันนี้ว่าง</span>
+            <button type="button" id="tog-upcoming" class="toggle-btn on">เปิด</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 5: BACKGROUND -->
+      <div id="tab-bg" class="tab-pane">
+        <div class="ctrl-group">
+          <div class="ctrl-label"><span>ชนิดพื้นหลังโหมดกลางวัน (Daytime Background)</span></div>
+          <div class="opt-grid" id="opt-bg-mode">
+            <button type="button" class="opt-btn opt-3col" data-val="solid">สีล้วน</button>
+            <button type="button" class="opt-btn opt-3col" data-val="gradient">ไล่เฉดสี</button>
+            <button type="button" class="opt-btn opt-3col" data-val="image">รูปภาพส่วนตัว</button>
+          </div>
+        </div>
+
+        <div id="bg-solid-box" class="ctrl-group">
+          <div class="ctrl-label"><span>เลือกสีพื้นหลัง (Solid Color)</span></div>
+          <div class="swatch-row" id="swatches-bg">
+            <button type="button" class="swatch" data-color="#0f141c" style="background:#0f141c;"></button>
+            <button type="button" class="swatch" data-color="#000000" style="background:#000000;" title="ดำสนิท"></button>
+            <button type="button" class="swatch" data-color="#1e293b" style="background:#1e293b;"></button>
+            <button type="button" class="swatch" data-color="#271c19" style="background:#271c19;"></button>
+            <button type="button" class="swatch" data-color="#f5f2eb" style="background:#f5f2eb;"></button>
+            <button type="button" class="swatch" data-color="#e2e8f0" style="background:#e2e8f0;"></button>
+            <input type="color" id="inp-bg-color" class="color-input-native" value="#0f141c">
+          </div>
+        </div>
+
+        <div id="bg-gradient-box" class="ctrl-group" style="display:none;">
+          <div class="ctrl-label"><span>โทนไล่เฉดสี (Curated Gradients)</span></div>
+          <div class="opt-grid" id="opt-gradients">
+            <button type="button" class="preset-card" data-grad="aurora" style="background:linear-gradient(135deg,#0f172a,#134e4a,#1e1b4b);color:#fff;">Northern Aurora</button>
+            <button type="button" class="preset-card" data-grad="dusk" style="background:linear-gradient(135deg,#1e1b4b,#581c87,#881337);color:#fff;">Twilight Dusk</button>
+            <button type="button" class="preset-card" data-grad="ocean" style="background:linear-gradient(135deg,#082f49,#0f766e);color:#fff;">Deep Ocean</button>
+            <button type="button" class="preset-card" data-grad="ember" style="background:linear-gradient(135deg,#1c1917,#431407,#7c2d12);color:#fff;">Warm Ember</button>
+            <button type="button" class="preset-card" data-grad="morning" style="background:linear-gradient(135deg,#fef3c7,#fde68a,#bae6fd);color:#1e293b;">Soft Morning</button>
+            <button type="button" class="preset-card" data-grad="steel" style="background:linear-gradient(135deg,#18181b,#3f3f46);color:#fff;">Brushed Steel</button>
+          </div>
+        </div>
+
+        <div id="bg-image-box" class="ctrl-group" style="display:none;">
+          <div class="ctrl-label"><span>เลือกรูปจากอัลบั้ม iPad / คอมพิวเตอร์</span></div>
+          <input type="file" id="inp-bg-file" accept="image/*" class="text-field" style="margin-bottom:10px;">
+          <div class="ctrl-label"><span>หรือวางลิงก์รูปภาพ (Image URL)</span></div>
+          <input type="url" id="inp-bg-url" class="text-field" placeholder="https://...">
+          <div class="ctrl-label" style="margin-top:12px;">
+            <span>ลดความสว่างภาพพื้นหลัง (Backdrop Tint)</span>
+            <span id="val-bg-tint" class="ctrl-val">35%</span>
+          </div>
+          <input type="range" id="inp-bg-tint" class="range-slider" min="0" max="85" step="5" value="35">
+        </div>
+
+        <div class="ctrl-group">
+          <div class="ctrl-label"><span>ลวดลายพื้นผิว (Subtle Pattern)</span></div>
+          <div class="opt-grid" id="opt-pattern">
+            <button type="button" class="opt-btn opt-3col" data-val="none">ไม่มี</button>
+            <button type="button" class="opt-btn opt-3col" data-val="dots">จุด (Dots)</button>
+            <button type="button" class="opt-btn opt-3col" data-val="grid">ตาราง (Grid)</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- TAB 6: SOUND, PROTECTION & SYSTEM -->
+      <div id="tab-more" class="tab-pane">
+        <div class="ctrl-group">
+          <div class="ctrl-label"><span>ชื่อหัวมุมจอ (Desk Label)</span></div>
+          <input type="text" id="inp-desk-label" class="text-field" maxlength="40" placeholder="เช่น โต๊ะหัวเตียง, ห้องทำงาน">
+        </div>
+
+        <div class="ctrl-group">
+          <div class="switch-row">
+            <span>แสดงคำทักทายตามเวลา (สวัสดีตอนเช้า/บ่าย/ค่ำ)</span>
+            <button type="button" id="tog-greeting" class="toggle-btn on">เปิด</button>
+          </div>
+          <div class="switch-row">
+            <span>เสียงเตือนเบาๆ ทุกต้นชั่วโมง (งดเตือนช่วงกลางคืน)</span>
+            <button type="button" id="tog-chime" class="toggle-btn">ปิด</button>
+          </div>
+          <div class="switch-row">
+            <span>ขยับพิกเซลอัตโนมัติทุกนาที (ถนอมจอ iPad 2 เปิดทั้งคืน)</span>
+            <button type="button" id="tog-pixelshift" class="toggle-btn on">เปิด</button>
+          </div>
+        </div>
+
+        <div class="ctrl-group">
+          <div class="ctrl-label">
+            <span>ลดแสงหน้าจอโหมดปกติ (Daytime Dimmer)</span>
+            <span id="val-dimmer" class="ctrl-val">0%</span>
+          </div>
+          <input type="range" id="inp-dimmer" class="range-slider" min="0" max="80" step="5" value="0">
+        </div>
+
+        <div class="ctrl-group">
+          <div class="ctrl-label"><span>คัดลอก / วางรหัสตั้งค่าข้ามเครื่อง (Sync Config Text)</span></div>
+          <div style="display:-webkit-flex;display:flex;">
+            <button type="button" id="btn-open-sync" class="opt-btn" style="margin:0;">เปิดกล่องคัดลอก/วางรหัสการตั้งค่า</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Safe In-Page Reset Confirmation Bar -->
+    <div id="reset-confirm-bar" class="reset-confirm-bar">
+      <span>ยืนยันคืนค่าการตั้งค่าเป็นค่าเริ่มต้น?</span>
+      <div>
+        <button type="button" id="btn-reset-cancel" class="slot-mini-btn" style="margin:0 4px 0 0;">ยกเลิก</button>
+        <button type="button" id="btn-reset-yes" class="slot-mini-btn" style="margin:0;background:#dc2626;border-color:#fca5a5;color:#fff;">ยืนยันรีเซ็ต</button>
+      </div>
+    </div>
+
+    <div class="drawer-footer">
+      <button type="button" id="btn-reset" class="reset-btn">คืนค่าเริ่มต้น</button>
+      <button type="button" id="btn-done-drawer" class="icon-btn" style="background:#0284c7;border-color:#38bdf8;color:#fff;">เสร็จสิ้น</button>
+    </div>
+  </aside>
+
+  <!-- Bedside Alarm & Quick Timer Modal -->
+  <div id="alarm-modal" class="modal-box" role="dialog" aria-labelledby="alarm-modal-title">
+    <div style="display:-webkit-flex;display:flex;-webkit-justify-content:space-between;justify-content:space-between;-webkit-align-items:center;align-items:center;margin-bottom:14px;">
+      <h3 id="alarm-modal-title" style="margin:0;font-size:18px;">ตั้งนาฬิกาปลุกหัวเตียง &amp; จับเวลาถอยหลัง</h3>
+      <button type="button" id="alarm-close" class="drawer-close" aria-label="ปิด">&times;</button>
+    </div>
+
+    <div class="guide-step">
+      <div style="display:-webkit-flex;display:flex;-webkit-justify-content:space-between;justify-content:space-between;-webkit-align-items:center;align-items:center;margin-bottom:8px;">
+        <strong>นาฬิกาปลุกประจำวัน (Daily Alarm)</strong>
+        <button type="button" id="tog-alarm-enable" class="toggle-btn">ปิดอยู่</button>
+      </div>
+      <div class="time-select-group">
+        <span style="font-size:13px;margin-right:10px;">เวลาปลุก:</span>
+        <select id="sel-alarm-h" class="time-select"></select>
+        <span style="margin:0 5px;font-weight:700;">:</span>
+        <select id="sel-alarm-m" class="time-select"></select>
+        <button type="button" id="btn-test-sound" class="slot-mini-btn" style="margin:0 0 0 12px;padding:6px 10px;">ทดสอบเสียง</button>
+      </div>
+    </div>
+
+    <div class="guide-step">
+      <strong>จับเวลาถอยหลังด่วน (Quick Countdown Timer)</strong>
+      <div id="timer-readout" class="tabular-nums" style="font-size:28px;font-weight:700;margin:6px 0;color:#38bdf8;">00:00</div>
+      <div class="opt-grid">
+        <button type="button" class="opt-btn opt-3col" data-timer-min="5">+ 5 นาที</button>
+        <button type="button" class="opt-btn opt-3col" data-timer-min="15">+ 15 นาที</button>
+        <button type="button" class="opt-btn opt-3col" data-timer-min="30">+ 30 นาที</button>
+        <button type="button" class="opt-btn opt-3col" data-timer-min="60">+ 60 นาที</button>
+        <button type="button" id="btn-timer-stop" class="opt-btn opt-3col" style="color:#fca5a5;border-color:rgba(248,113,113,0.35);">ล้างเวลา</button>
+      </div>
+    </div>
+
+    <div style="text-align:right;margin-top:12px;">
+      <button type="button" id="alarm-ok" class="icon-btn" style="background:#0284c7;border-color:#38bdf8;color:#fff;">ปิดหน้าต่าง</button>
+    </div>
+  </div>
+
+  <!-- Copy / Paste Settings Sync Modal -->
+  <div id="sync-modal" class="modal-box" role="dialog" aria-labelledby="sync-title">
+    <div style="display:-webkit-flex;display:flex;-webkit-justify-content:space-between;justify-content:space-between;-webkit-align-items:center;align-items:center;margin-bottom:10px;">
+      <h3 id="sync-title" style="margin:0;font-size:17px;">คัดลอก / วางรหัสตั้งค่าข้ามอุปกรณ์</h3>
+      <button type="button" id="sync-close" class="drawer-close" aria-label="ปิด">&times;</button>
+    </div>
+    <p style="font-size:12.5px;color:#cbd5e1;margin-top:0;">
+      คัดลอกข้อความด้านล่างไปวางบน iPad 2 เพื่อใช้ธีมและเวลาแสดงผลชุดเดียวกันได้ทันที:
+    </p>
+    <textarea id="sync-textarea" class="text-field" rows="5" style="font-family:monospace;font-size:12px;"></textarea>
+    <div id="sync-msg" style="font-size:12px;color:#38bdf8;min-height:18px;margin-top:6px;"></div>
+    <div style="display:-webkit-flex;display:flex;-webkit-justify-content:flex-end;justify-content:flex-end;margin-top:10px;">
+      <button type="button" id="btn-apply-sync" class="icon-btn" style="background:#0284c7;border-color:#38bdf8;color:#fff;">นำรหัสนี้มาใช้</button>
+    </div>
+  </div>
+
+  <!-- iPad 2 Easy Deployment & Home Screen Guide Modal -->
+  <div id="guide-modal" class="modal-box" role="dialog" aria-labelledby="guide-title">
+    <div style="display:-webkit-flex;display:flex;-webkit-justify-content:space-between;justify-content:space-between;-webkit-align-items:center;align-items:center;margin-bottom:12px;">
+      <h3 id="guide-title" style="margin:0;font-size:18px;">วิธีนำไปเปิดใช้งานบน iPad 2 ให้เหมือนแอปจริง</h3>
+      <button type="button" id="guide-close" class="drawer-close" aria-label="ปิด">&times;</button>
+    </div>
+    <div class="guide-step">
+      <strong>1. เปิดผ่านลิงก์หรือไฟล์ HTML โดยตรง</strong><br>
+      กดปุ่ม <strong>Publish (แชร์ลิงก์)</strong> หรือ <strong>Download (บันทึกไฟล์ index.html)</strong> บนแถบด้านบนของหน้าต่าง Canvas หากนำไฟล์ <code>index.html</code> ไปวางบนเว็บโฮสติ้งอย่าง Netlify Drop หรือ GitHub Pages จะได้ลิงก์สั้นๆ เปิดใน Safari บน iPad 2 ได้ทันที
+    </div>
+    <div class="guide-step">
+      <strong>2. ปักหมุดเป็นแอปเต็มจอ (Add to Home Screen)</strong><br>
+      เมื่อเปิดใน Safari บน iPad 2 แล้ว แตะปุ่ม <strong>Share</strong> &rarr; <strong>Add to Home Screen</strong> แอปสร้างไอคอนหน้าโฮมให้อัตโนมัติและเปิดแบบไร้แถบ URL
+    </div>
+    <div class="guide-step">
+      <strong>3. ตั้งค่าวางหัวเตียงข้ามคืน</strong><br>
+      ตั้งค่า iPad ที่ <strong>Settings &rarr; General &rarr; Auto-Lock &rarr; Never</strong> และตั้งเวลา <strong>โหมดกลางคืนสีแดง (เช่น 22:00 - 06:00)</strong> หน้าจอจะมืดสนิทเหลือเฉพาะตัวเลขสีแดงถนอมสายตาและสลับกลับเองตอนเช้า
+    </div>
+    <div style="text-align:right;margin-top:12px;">
+      <button type="button" id="guide-ok" class="icon-btn" style="background:#0284c7;border-color:#38bdf8;color:#fff;">เข้าใจแล้ว</button>
+    </div>
+  </div>
+
+  <script>
+    (function() {
+      // Strictly ES5-compatible JavaScript for 100% compatibility with iPad 2 (iOS 9.3.5 Safari) and all modern browsers.
+      var STORAGE_KEY = 'ipad_desk_clock_cal_v2';
+      var LEGACY_KEY = 'ipad_desk_clock_cal_v1';
+      var NOTES_KEY = 'ipad_desk_notes_v1';
+      var SLOTS_KEY = 'ipad_desk_slots_v1';
+
+      var DEFAULT_STATE = {
+        layout: 'split',
+        swapPanels: false,
+        clockStyle: 'digital',
+        clockScale: 100,
+        clockWeight: '700',
+        theme: 'obsidian',
+        textColor: '#f8fafc',
+        accentColor: '#38bdf8',
+        cardAlpha: 45,
+        cardDarkSurface: true,
+        fontKey: 'prompt',
+        calSize: 'normal',
+        bgMode: 'solid',
+        bgColor: '#0f141c',
+        bgGradient: 'aurora',
+        bgImageData: '',
+        bgTint: 35,
+        pattern: 'none',
+        deskLabel: 'Desk Clock & Calendar',
+        showGreeting: true,
+        locale: 'th-be',
+        use24h: true,
+        padZero: true,
+        showSec: true,
+        blinkColon: true,
+        analogNums: true,
+        showDayProg: false,
+        worldTz: 'none',
+        mondayFirst: false,
+        showHolidays: true,
+        showAgenda: true,
+        showUpcoming: true,
+        hourlyChime: false,
+        pixelShift: true,
+        dimmer: 0,
+        zenMode: false,
+        // Sleep-Safe Red Night Mode & Programmable Schedule
+        nightPolicy: 'scheduled',
+        nightStartH: 22,
+        nightStartM: 0,
+        nightEndH: 6,
+        nightEndM: 0,
+        nightShade: '#dc2626',
+        nightBright: 75,
+        nightBorderless: true,
+        nightHideCal: false,
+        nightCalm: true,
+        // Daily Bedside Alarm
+        alarmEnabled: false,
+        alarmH: 7,
+        alarmM: 0
+      };
+
+      var THEMES = {
+        obsidian: { bgMode: 'solid', bgColor: '#0f141c', textColor: '#f8fafc', accentColor: '#38bdf8', cardDarkSurface: true, cardAlpha: 45 },
+        oled:     { bgMode: 'solid', bgColor: '#000000', textColor: '#e2e8f0', accentColor: '#10b981', cardDarkSurface: true, cardAlpha: 25 },
+        ivory:    { bgMode: 'solid', bgColor: '#f5f2eb', textColor: '#1e293b', accentColor: '#d97706', cardDarkSurface: false, cardAlpha: 75 },
+        navy:     { bgMode: 'solid', bgColor: '#0c1e35', textColor: '#e0f2fe', accentColor: '#38bdf8', cardDarkSurface: true, cardAlpha: 45 },
+        espresso: { bgMode: 'solid', bgColor: '#231915', textColor: '#fef3c7', accentColor: '#f59e0b', cardDarkSurface: true, cardAlpha: 45 },
+        sage:     { bgMode: 'solid', bgColor: '#eef3ef', textColor: '#1b3124', accentColor: '#059669', cardDarkSurface: false, cardAlpha: 75 }
+      };
+
+      var GRADIENTS = {
+        aurora:  'linear-gradient(135deg, #0f172a 0%, #134e4a 52%, #1e1b4b 100%)',
+        dusk:    'linear-gradient(135deg, #1e1b4b 0%, #581c87 52%, #881337 100%)',
+        ocean:   'linear-gradient(135deg, #082f49 0%, #0f766e 100%)',
+        ember:   'linear-gradient(135deg, #1c1917 0%, #431407 55%, #7c2d12 100%)',
+        morning: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 48%, #bae6fd 100%)',
+        steel:   'linear-gradient(135deg, #18181b 0%, #3f3f46 100%)'
+      };
+
+      var FONTS = {
+        prompt: "'Prompt', 'Avenir Next', 'Helvetica Neue', 'Thonburi', sans-serif",
+        kanit:  "'Kanit', 'Avenir Next', 'Helvetica Neue', 'Thonburi', sans-serif",
+        system: "'Avenir Next', 'Helvetica Neue', -apple-system, 'Thonburi', sans-serif",
+        mono:   "'Space Mono', 'Menlo', 'Courier New', monospace",
+        serif:  "'Playfair Display', 'Georgia', 'Times New Roman', serif",
+        inter:  "'Inter', 'Helvetica Neue', Arial, sans-serif"
+      };
+
+      // Exact fixed-date Thai Public Holidays (verified calendar dates)
+      var FIXED_HOLIDAYS = {
+        '01-01': { th: 'วันขึ้นปีใหม่', en: "New Year's Day" },
+        '04-06': { th: 'วันจักรี', en: 'Chakri Memorial Day' },
+        '04-13': { th: 'วันสงกรานต์', en: 'Songkran Festival' },
+        '04-14': { th: 'วันสงกรานต์', en: 'Songkran Festival' },
+        '04-15': { th: 'วันสงกรานต์', en: 'Songkran Festival' },
+        '05-01': { th: 'วันแรงงานแห่งชาติ', en: 'National Labour Day' },
+        '05-04': { th: 'วันฉัตรมงคล', en: 'Coronation Day' },
+        '06-03': { th: 'วันเฉลิมฯ พระบรมราชินี', en: "Queen Suthida's Birthday" },
+        '07-28': { th: 'วันเฉลิมฯ ร.10', en: "King's Birthday" },
+        '08-12': { th: 'วันแม่แห่งชาติ', en: "Mother's Day" },
+        '10-13': { th: 'วันนวมินทรมหาราช', en: 'King Bhumibol Memorial Day' },
+        '10-23': { th: 'วันปิยมหาราช', en: 'Chulalongkorn Day' },
+        '12-05': { th: 'วันพ่อแห่งชาติ', en: "Father's Day" },
+        '12-10': { th: 'วันรัฐธรรมนูญ', en: 'Constitution Day' },
+        '12-31': { th: 'วันสิ้นปี', en: "New Year's Eve" }
+      };
+
+      var MONTHS_TH = ['มกราคม','กุมภาพันธ์','มีนาคม','เมษายน','พฤษภาคม','มิถุนายน','กรกฎาคม','สิงหาคม','กันยายน','ตุลาคม','พฤศจิกายน','ธันวาคม'];
+      var MONTHS_EN = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+      var DAYS_FULL_TH = ['วันอาทิตย์','วันจันทร์','วันอังคาร','วันพุธ','วันพฤหัสบดี','วันศุกร์','วันเสาร์'];
+      var DAYS_FULL_EN = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+      var DAYS_SHORT_TH = ['อา.','จ.','อ.','พ.','พฤ.','ศ.','ส.'];
+      var DAYS_SHORT_EN = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+
+      var state = cloneObj(DEFAULT_STATE);
+      var notesMap = {};
+      var favoriteSlots = [null, null, null];
+      var selectedNotePrio = '#38bdf8';
+      var editingNoteIdx = -1;
+
+      var nowInit = new Date();
+      var viewYear = nowInit.getFullYear();
+      var viewMonth = nowInit.getMonth();
+      var selectedDateKey = makeDateKey(nowInit.getFullYear(), nowInit.getMonth(), nowInit.getDate());
+      var lastCalendarTodayKey = selectedDateKey;
+
+      // Smart DOM Diffing & Runtime Trackers
+      var lastClockTplKey = '';
+      var clockEls = {};
+      var lastNightState = null;
+      var lastPixelShiftMin = -1;
+      var lastChimeHourKey = '';
+      var lastAlarmFireKey = '';
+      var zenPeekTimer = null;
+      var tickTimer = null;
+
+      // Countdown & Audio State
+      var countdownRemainSec = 0;
+      var isRinging = false;
+      var ringInterval = null;
+      var audioCtx = null;
+
+      function cloneObj(src) {
+        var out = {};
+        var k;
+        for (k in src) {
+          if (src.hasOwnProperty(k)) {
+            out[k] = src[k];
+          }
+        }
+        return out;
+      }
+
+      function pad2(n) {
+        return n < 10 ? '0' + n : '' + n;
+      }
+
+      function makeDateKey(y, m, d) {
+        return y + '-' + pad2(m + 1) + '-' + pad2(d);
+      }
+
+      // Generate Apple Touch Icon dynamically via Canvas for iPad Home Screen
+      function setupTouchIcon() {
+        try {
+          var cvs = document.createElement('canvas');
+          cvs.width = 152;
+          cvs.height = 152;
+          var ctx = cvs.getContext('2d');
+          if (!ctx) return;
+          ctx.fillStyle = '#090d14';
+          ctx.fillRect(0, 0, 152, 152);
+          ctx.strokeStyle = '#dc2626';
+          ctx.lineWidth = 6;
+          ctx.beginPath();
+          ctx.arc(76, 76, 54, 0, Math.PI * 2, false);
+          ctx.stroke();
+          ctx.strokeStyle = '#f8fafc';
+          ctx.lineWidth = 6;
+          ctx.lineCap = 'round';
+          ctx.beginPath();
+          ctx.moveTo(76, 76);
+          ctx.lineTo(76, 42);
+          ctx.moveTo(76, 76);
+          ctx.lineTo(104, 76);
+          ctx.stroke();
+          var link = document.getElementById('apple-touch-icon-link');
+          if (link) link.href = cvs.toDataURL('image/png');
+        } catch (e) {}
+      }
+
+      function loadState() {
+        try {
+          var raw = window.localStorage.getItem(STORAGE_KEY) || window.localStorage.getItem(LEGACY_KEY);
+          if (raw) {
+            var parsed = JSON.parse(raw);
+            var k;
+            for (k in DEFAULT_STATE) {
+              if (DEFAULT_STATE.hasOwnProperty(k) && typeof parsed[k] !== 'undefined') {
+                state[k] = parsed[k];
+              }
+            }
+          }
+        } catch (e) {}
+
+        try {
+          var rawNotes = window.localStorage.getItem(NOTES_KEY);
+          if (rawNotes) {
+            var parsedNotes = JSON.parse(rawNotes);
+            if (parsedNotes && typeof parsedNotes === 'object') {
+              notesMap = parsedNotes;
+            }
+          }
+        } catch (e2) {}
+
+        try {
+          var rawSlots = window.localStorage.getItem(SLOTS_KEY);
+          if (rawSlots) {
+            var ps = JSON.parse(rawSlots);
+            if (ps && ps.length === 3) favoriteSlots = ps;
+          }
+        } catch (e3) {}
+      }
+
+      function saveState() {
+        try {
+          window.localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        } catch (e) {}
+      }
+
+      function saveNotes() {
+        try {
+          window.localStorage.setItem(NOTES_KEY, JSON.stringify(notesMap));
+        } catch (e) {}
+      }
+
+      function saveSlots() {
+        try {
+          window.localStorage.setItem(SLOTS_KEY, JSON.stringify(favoriteSlots));
+        } catch (e) {}
+      }
+
+      // Evaluate whether Red Night Mode should be active right now
+      function isNightActive(nowDate) {
+        if (state.nightPolicy === 'on') return true;
+        if (state.nightPolicy === 'off') return false;
+        var d = nowDate || new Date();
+        var curMin = d.getHours() * 60 + d.getMinutes();
+        var startMin = (state.nightStartH * 60) + state.nightStartM;
+        var endMin = (state.nightEndH * 60) + state.nightEndM;
+        if (startMin === endMin) return false;
+        if (startMin < endMin) {
+          return curMin >= startMin && curMin < endMin;
+        }
+        // Cross-midnight window (e.g. 22:00 -> 06:00)
+        return (curMin >= startMin) || (curMin < endMin);
+      }
+
+      function hexToRgb(hex) {
+        var clean = (hex || '#38bdf8').replace('#', '');
+        if (clean.length === 3) {
+          clean = clean.charAt(0) + clean.charAt(0) + clean.charAt(1) + clean.charAt(1) + clean.charAt(2) + clean.charAt(2);
+        }
+        var num = parseInt(clean, 16);
+        if (isNaN(num)) return { r: 56, g: 189, b: 248 };
+        return { r: (num >> 16) & 255, g: (num >> 8) & 255, b: num & 255 };
+      }
+
+      function getLuminance(hex) {
+        var c = hexToRgb(hex);
+        return (0.299 * c.r + 0.587 * c.g + 0.114 * c.b) / 255;
+      }
+
+      function isLightHex(hex) {
+        return getLuminance(hex) > 0.62;
+      }
+
+      function formatYear(y) {
+        return state.locale === 'th-be' ? (y + 543) : y;
+      }
+
+      function formatFullDate(dObj) {
+        var d = dObj.getDate();
+        var m = dObj.getMonth();
+        var y = formatYear(dObj.getFullYear());
+        if (state.locale === 'en-ce') {
+          return MONTHS_EN[m] + ' ' + d + ', ' + y;
+        }
+        return d + ' ' + MONTHS_TH[m] + ' ' + y;
+      }
+
+      function formatKeyReadable(dateKey) {
+        var parts = dateKey.split('-');
+        if (parts.length !== 3) return dateKey;
+        var y = parseInt(parts[0], 10);
+        var m = parseInt(parts[1], 10) - 1;
+        var d = parseInt(parts[2], 10);
+        if (state.locale === 'en-ce') {
+          return MONTHS_EN[m] + ' ' + d + ', ' + formatYear(y);
+        }
+        return d + ' ' + MONTHS_TH[m] + ' ' + formatYear(y);
+      }
+
+      function getGreeting(hr) {
+        if (!state.showGreeting) return '';
+        if (state.locale === 'en-ce') {
+          if (hr < 12) return 'Good Morning •';
+          if (hr < 18) return 'Good Afternoon •';
+          return 'Good Evening •';
+        }
+        if (hr < 12) return 'สวัสดีตอนเช้า •';
+        if (hr < 18) return 'สวัสดีตอนบ่าย •';
+        return 'สวัสดีตอนค่ำ •';
+      }
+
+      // Synthesized Web Audio API Chime & Alarm (No external audio assets needed)
+      function ensureAudio() {
+        try {
+          var Ctx = window.AudioContext || window.webkitAudioContext;
+          if (Ctx && !audioCtx) {
+            audioCtx = new Ctx();
+          }
+          if (audioCtx && audioCtx.state === 'suspended' && audioCtx.resume) {
+            audioCtx.resume();
+          }
+        } catch (e) {}
+      }
+
+      function playGentleTone(freq, durSec) {
+        try {
+          ensureAudio();
+          if (!audioCtx) return;
+          var osc = audioCtx.createOscillator();
+          var gain = audioCtx.createGain();
+          osc.type = 'sine';
+          osc.frequency.value = freq || 528;
+          gain.gain.setValueAtTime(0.001, audioCtx.currentTime);
+          gain.gain.exponentialRampToValueAtTime(0.14, audioCtx.currentTime + 0.04);
+          gain.gain.exponentialRampToValueAtTime(0.0001, audioCtx.currentTime + (durSec || 0.7));
+          osc.connect(gain);
+          gain.connect(audioCtx.destination);
+          osc.start(audioCtx.currentTime);
+          osc.stop(audioCtx.currentTime + (durSec || 0.75));
+        } catch (e) {}
+      }
+
+      function triggerRinging(titleText, allowSnooze) {
+        isRinging = true;
+        document.getElementById('ring-title').textContent = titleText;
+        document.getElementById('btn-snooze-ring').style.display = allowSnooze ? 'inline-flex' : 'none';
+        document.getElementById('ring-banner').className = 'ring-banner active';
+        playGentleTone(587.33, 0.55);
+        if (ringInterval) clearInterval(ringInterval);
+        ringInterval = setInterval(function() {
+          playGentleTone(587.33, 0.45);
+          setTimeout(function() { playGentleTone(880, 0.5); }, 260);
+        }, 2200);
+      }
+
+      function stopRinging() {
+        isRinging = false;
+        if (ringInterval) {
+          clearInterval(ringInterval);
+          ringInterval = null;
+        }
+        document.getElementById('ring-banner').className = 'ring-banner';
+      }
+
+      // Apply Visual Theme, Night Mode Overrides, Layout & Contrast Check
+      function applyVisualSettings() {
+        var now = new Date();
+        var night = isNightActive(now);
+        lastNightState = night;
+
+        var body = document.body;
+        var bgLayer = document.getElementById('bg-layer');
+        var patternLayer = document.getElementById('pattern-layer');
+        var bgTintLayer = document.getElementById('bg-tint-layer');
+        var dimmerLayer = document.getElementById('dimmer-layer');
+        var stage = document.getElementById('stage');
+        var topbar = document.getElementById('topbar');
+        var panelClock = document.getElementById('panel-clock');
+        var panelCal = document.getElementById('panel-calendar');
+        var calTable = document.getElementById('cal-table');
+        var scaleWrap = document.getElementById('clock-scale-wrap');
+        var openBtn = document.getElementById('btn-open-settings');
+        var quickNightBtn = document.getElementById('btn-quick-night');
+        var nightPill = document.getElementById('night-status-pill');
+        var agendaAddBtn = document.getElementById('agenda-add-btn');
+        var agendaBox = document.getElementById('agenda-box');
+
+        var activeText = night ? state.nightShade : state.textColor;
+        var activeAccent = night ? state.nightShade : state.accentColor;
+
+        body.style.fontFamily = FONTS[state.fontKey] || FONTS.prompt;
+        body.style.color = activeText;
+
+        var cls = [];
+        if (state.zenMode) cls.push('zen-mode');
+        if (night) {
+          cls.push('night-red-active');
+          if (state.nightBorderless) cls.push('night-borderless');
+        }
+        body.className = cls.join(' ');
+
+        // Desk label & greeting
+        document.getElementById('desk-label-display').textContent = state.deskLabel || 'Desk Clock & Calendar';
+        document.getElementById('greeting-display').textContent = night ? '' : getGreeting(now.getHours());
+
+        // Night status pill & quick button
+        var schedStr = pad2(state.nightStartH) + ':' + pad2(state.nightStartM) + '–' + pad2(state.nightEndH) + ':' + pad2(state.nightEndM);
+        if (night) {
+          nightPill.className = 'status-pill night-on';
+          nightPill.textContent = (state.nightPolicy === 'scheduled') ? ('โหมดสีแดงทำงาน (' + schedStr + ')') : 'โหมดสีแดงเปิดค้าง';
+          quickNightBtn.className = 'icon-btn night-btn-active';
+        } else {
+          nightPill.className = 'status-pill';
+          nightPill.textContent = (state.nightPolicy === 'scheduled') ? ('ตั้งเวลาสีแดง ' + schedStr) : 'โหมดสีแดง: ปิด';
+          quickNightBtn.className = 'icon-btn';
+        }
+
+        // Effective layout (respect nightHideCal during night hours)
+        var effLayout = (night && state.nightHideCal) ? 'clock-only' : state.layout;
+        stage.className = 'stage-' + effLayout + (state.swapPanels ? ' swap-panels' : '');
+
+        // Calendar table size
+        calTable.className = state.calSize === 'large' ? 'cal-table cal-size-large' : 'cal-table';
+
+        // Clock scale
+        var sc = (state.clockScale || 100) / 100;
+        scaleWrap.style.webkitTransform = 'scale(' + sc + ')';
+        scaleWrap.style.transform = 'scale(' + sc + ')';
+
+        // Background & Dimmer
+        if (night) {
+          bgLayer.style.backgroundImage = 'none';
+          bgLayer.style.backgroundColor = '#000000';
+          bgTintLayer.style.opacity = '0';
+          patternLayer.style.opacity = '0';
+          dimmerLayer.style.opacity = String((100 - (state.nightBright || 75)) / 100);
+        } else {
+          if (state.bgMode === 'solid') {
+            bgLayer.style.backgroundImage = 'none';
+            bgLayer.style.backgroundColor = state.bgColor;
+            bgTintLayer.style.opacity = '0';
+            state.cardDarkSurface = !isLightHex(state.bgColor);
+          } else if (state.bgMode === 'gradient') {
+            bgLayer.style.backgroundColor = '#0f141c';
+            bgLayer.style.backgroundImage = GRADIENTS[state.bgGradient] || GRADIENTS.aurora;
+            bgTintLayer.style.opacity = '0';
+            state.cardDarkSurface = (state.bgGradient !== 'morning');
+          } else if (state.bgMode === 'image') {
+            bgLayer.style.backgroundColor = '#0f141c';
+            if (state.bgImageData) {
+              bgLayer.style.backgroundImage = 'url("' + state.bgImageData.replace(/"/g, '\\"') + '")';
+            } else {
+              bgLayer.style.backgroundImage = GRADIENTS.aurora;
+            }
+            bgTintLayer.style.opacity = String((state.bgTint || 0) / 100);
+            state.cardDarkSurface = true;
+          }
+
+          var patRgb = isLightHex(state.textColor) ? '255,255,255' : '0,0,0';
+          if (state.pattern === 'dots') {
+            patternLayer.style.backgroundImage = 'radial-gradient(rgba(' + patRgb + ', 0.16) 1px, transparent 1px)';
+            patternLayer.style.backgroundSize = '20px 20px';
+            patternLayer.style.opacity = '1';
+          } else if (state.pattern === 'grid') {
+            patternLayer.style.backgroundImage = 'linear-gradient(to right, rgba(' + patRgb + ', 0.07) 1px, transparent 1px), linear-gradient(to bottom, rgba(' + patRgb + ', 0.07) 1px, transparent 1px)';
+            patternLayer.style.backgroundSize = '28px 28px';
+            patternLayer.style.opacity = '1';
+          } else {
+            patternLayer.style.opacity = '0';
+          }
+
+          var alpha = (state.cardAlpha || 0) / 100;
+          var surfBase = state.cardDarkSurface ? '17, 24, 39' : '255, 255, 255';
+          var borderBase = state.cardDarkSurface ? '255, 255, 255' : '15, 23, 42';
+          var surfCss = 'rgba(' + surfBase + ', ' + alpha + ')';
+          var borderCss = alpha === 0 ? 'transparent' : 'rgba(' + borderBase + ', 0.12)';
+          var shadowCss = alpha === 0 ? 'none' : '0 12px 32px rgba(0, 0, 0, 0.16)';
+
+          panelClock.style.backgroundColor = surfCss;
+          panelClock.style.borderColor = borderCss;
+          panelClock.style.boxShadow = shadowCss;
+
+          panelCal.style.backgroundColor = surfCss;
+          panelCal.style.borderColor = borderCss;
+          panelCal.style.boxShadow = shadowCss;
+
+          topbar.style.backgroundColor = 'rgba(' + surfBase + ', ' + Math.max(alpha * 0.8, 0.25) + ')';
+          topbar.style.border = '1px solid rgba(' + borderBase + ', 0.12)';
+          dimmerLayer.style.opacity = String((state.dimmer || 0) / 100);
+        }
+
+        // Accent Buttons
+        var accContrast = night ? '#000000' : (isLightHex(activeAccent) ? '#0f172a' : '#ffffff');
+        openBtn.style.backgroundColor = activeAccent;
+        openBtn.style.color = accContrast;
+        agendaAddBtn.style.backgroundColor = activeAccent;
+        agendaAddBtn.style.color = accContrast;
+
+        // Agenda visibility
+        agendaBox.style.display = state.showAgenda ? 'block' : 'none';
+
+        // Contrast Guard Warning (when in solid bg daytime mode)
+        var warnEl = document.getElementById('contrast-warn');
+        if (state.bgMode === 'solid') {
+          var diff = Math.abs(getLuminance(state.textColor) - getLuminance(state.bgColor));
+          warnEl.style.display = (diff < 0.25) ? 'flex' : 'none';
+        } else {
+          warnEl.style.display = 'none';
+        }
+
+        // Localization labels
+        document.getElementById('cal-today').textContent = (state.locale === 'en-ce') ? 'Today' : 'วันนี้';
+        document.getElementById('agenda-input').placeholder = (state.locale === 'en-ce') ? 'Add a note for this day...' : 'เพิ่มนัดหมายหรือบันทึกสั้นๆ...';
+        document.getElementById('agenda-add-btn').textContent = editingNoteIdx >= 0 ? ((state.locale === 'en-ce') ? 'Save' : 'บันทึก') : ((state.locale === 'en-ce') ? 'Add' : 'เพิ่ม');
+      }
+
+      // Build Clock DOM only when template settings change, then update nodes cheaply
+      function renderClock() {
+        var now = new Date();
+        var night = isNightActive(now);
+        if (night !== lastNightState) {
+          applyVisualSettings();
+          renderCalendar();
+          renderAgenda();
+        }
+
+        var rawH = now.getHours();
+        var m = now.getMinutes();
+        var s = now.getSeconds();
+
+        // Anti-Burn-In Pixel Shift every 1 minute
+        if (m !== lastPixelShiftMin) {
+          lastPixelShiftMin = m;
+          var shiftWrap = document.getElementById('stage-shift-wrap');
+          if (state.pixelShift) {
+            var angle = (m / 60) * Math.PI * 2;
+            var dx = Math.round(Math.sin(angle) * 5);
+            var dy = Math.round(Math.cos(angle) * 4);
+            shiftWrap.style.webkitTransform = 'translate(' + dx + 'px, ' + dy + 'px)';
+            shiftWrap.style.transform = 'translate(' + dx + 'px, ' + dy + 'px)';
+          } else {
+            shiftWrap.style.webkitTransform = 'translate(0, 0)';
+            shiftWrap.style.transform = 'translate(0, 0)';
+          }
+          if (!night) {
+            document.getElementById('greeting-display').textContent = getGreeting(rawH);
+          }
+        }
+
+        // Hourly Chime (muted during Red Night Mode)
+        var hourKey = makeDateKey(now.getFullYear(), now.getMonth(), now.getDate()) + '-' + rawH;
+        if (state.hourlyChime && !night && m === 0 && s === 0 && lastChimeHourKey !== hourKey) {
+          lastChimeHourKey = hourKey;
+          playGentleTone(659.25, 0.65);
+        }
+
+        // Daily Alarm Check
+        var alarmFireKey = makeDateKey(now.getFullYear(), now.getMonth(), now.getDate()) + '-' + rawH + ':' + m;
+        if (state.alarmEnabled && rawH === state.alarmH && m === state.alarmM && s === 0 && lastAlarmFireKey !== alarmFireKey) {
+          lastAlarmFireKey = alarmFireKey;
+          triggerRinging('ถึงเวลาปลุก ' + pad2(state.alarmH) + ':' + pad2(state.alarmM) + ' น.', true);
+        }
+
+        // Countdown Timer Tick
+        if (countdownRemainSec > 0) {
+          countdownRemainSec--;
+          updateTimerUI();
+          if (countdownRemainSec === 0) {
+            triggerRinging('หมดเวลาที่นับถอยหลังแล้ว!', false);
+          }
+        }
+
+        var dispH = rawH;
+        var ampm = '';
+        if (!state.use24h) {
+          ampm = rawH >= 12 ? 'PM' : 'AM';
+          dispH = rawH % 12;
+          if (dispH === 0) dispH = 12;
+        }
+
+        var hStr = state.padZero ? pad2(dispH) : String(dispH);
+        var mStr = pad2(m);
+        var sStr = pad2(s);
+
+        var effShowSec = state.showSec && !(night && state.nightCalm);
+        var effBlink = state.blinkColon && !(night && state.nightCalm);
+        var colonDim = effBlink && (s % 2 === 1);
+        var activeAccent = night ? state.nightShade : state.accentColor;
+        var accContrast = night ? '#000000' : (isLightHex(activeAccent) ? '#0f172a' : '#ffffff');
+
+        var tplKey = [state.clockStyle, state.use24h, effShowSec, state.analogNums, state.clockWeight, activeAccent, night].join('|');
+        var container = document.getElementById('clock-render');
+
+        if (tplKey !== lastClockTplKey) {
+          lastClockTplKey = tplKey;
+          clockEls = {};
+          var wStyle = 'font-weight:' + state.clockWeight + ';';
+          var html = '';
+
+          if (state.clockStyle === 'digital' || state.clockStyle === 'standby' || state.clockStyle === 'progress') {
+            var rowCls = state.clockStyle === 'standby' ? 'standby-row tabular-nums' : 'digital-time-row tabular-nums';
+            var mainCls = state.clockStyle === 'standby' ? 'standby-main' : 'digital-main';
+            var secCls = state.clockStyle === 'standby' ? 'standby-sec' : 'digital-sec';
+
+            if (state.clockStyle === 'progress') html += '<div class="prog-clock-wrap">';
+            html += '<div class="' + rowCls + '" style="' + wStyle + '">';
+            html += '<span class="' + mainCls + '"><span id="ck-h"></span><span id="ck-col" class="digital-colon">:</span><span id="ck-m"></span></span>';
+            if (effShowSec) {
+              html += '<span id="ck-s" class="' + secCls + '" style="color:' + activeAccent + ';"></span>';
+            }
+            if (!state.use24h) {
+              html += '<span id="ck-ap" class="digital-ampm" style="background:' + activeAccent + ';color:' + accContrast + ';"></span>';
+            }
+            html += '</div>';
+            if (state.clockStyle === 'progress') {
+              html += '<div class="sec-progress-track"><div id="ck-prog" class="sec-progress-fill" style="background:' + activeAccent + ';"></div></div>';
+              html += '</div>';
+            }
+          } else if (state.clockStyle === 'flip') {
+            html += '<div class="flip-row tabular-nums" style="' + wStyle + '">';
+            html += '<div class="flip-card">';
+            if (!state.use24h) html += '<span id="ck-ap" class="flip-ampm-tag" style="color:' + activeAccent + ';"></span>';
+            html += '<span id="ck-h"></span></div>';
+            html += '<div class="flip-card"><span id="ck-m"></span></div>';
+            if (effShowSec) {
+              html += '<div class="flip-card flip-sec-card" style="color:' + activeAccent + ';"><span id="ck-s"></span></div>';
+            }
+            html += '</div>';
+          } else if (state.clockStyle === 'minimal') {
+            html += '<div class="minimal-stack tabular-nums" style="' + wStyle + '">';
+            html += '<div id="ck-h" class="minimal-hr"></div>';
+            html += '<div id="ck-m" class="minimal-mn" style="color:' + activeAccent + ';"></div>';
+            if (effShowSec || !state.use24h) {
+              html += '<div id="ck-sub" class="minimal-sub"></div>';
+            }
+            html += '</div>';
+          } else if (state.clockStyle === 'analog') {
+            var ticks = '';
+            var i, ang, r1, r2, sw, op;
+            for (i = 0; i < 60; i++) {
+              if (i % 5 === 0) {
+                ang = i * 6;
+                r1 = (i % 15 === 0) ? 84 : 89;
+                r2 = 96;
+                sw = (i % 15 === 0) ? 3 : 1.8;
+                op = (i % 15 === 0) ? 0.92 : 0.5;
+                ticks += '<line x1="100" y1="' + (100 - r2) + '" x2="100" y2="' + (100 - r1) + '" stroke="currentColor" stroke-width="' + sw + '" stroke-opacity="' + op + '" transform="rotate(' + ang + ' 100 100)" />';
+              }
+            }
+            var nums = '';
+            if (state.analogNums) {
+              var nIdx, nRad, nx, ny;
+              for (nIdx = 1; nIdx <= 12; nIdx++) {
+                nRad = (nIdx * 30 - 90) * (Math.PI / 180);
+                nx = (100 + Math.cos(nRad) * 71).toFixed(1);
+                ny = (100 + Math.sin(nRad) * 71 + 4.5).toFixed(1);
+                nums += '<text x="' + nx + '" y="' + ny + '" fill="currentColor" fill-opacity="0.82" font-size="13" font-weight="600" text-anchor="middle">' + nIdx + '</text>';
+              }
+            }
+            html += '<div class="analog-wrap">';
+            html += '<svg class="analog-svg" viewBox="0 0 200 200">';
+            html += '<circle cx="100" cy="100" r="96" fill="rgba(128,128,128,0.05)" stroke="currentColor" stroke-opacity="0.25" stroke-width="2" />';
+            html += ticks + nums;
+            html += '<line id="ck-ahr" x1="100" y1="100" x2="100" y2="50" stroke="currentColor" stroke-width="5.5" stroke-linecap="round" />';
+            html += '<line id="ck-amin" x1="100" y1="100" x2="100" y2="30" stroke="currentColor" stroke-width="3.8" stroke-linecap="round" />';
+            if (effShowSec) {
+              html += '<line id="ck-asec" x1="100" y1="114" x2="100" y2="22" stroke="' + activeAccent + '" stroke-width="2" stroke-linecap="round" />';
+            }
+            html += '<circle cx="100" cy="100" r="5" fill="' + activeAccent + '" />';
+            html += '</svg></div>';
+            html += '<div id="ck-sub" class="analog-digital-sub tabular-nums"></div>';
+          }
+
+          container.innerHTML = html;
+          clockEls.h = document.getElementById('ck-h');
+          clockEls.m = document.getElementById('ck-m');
+          clockEls.s = document.getElementById('ck-s');
+          clockEls.col = document.getElementById('ck-col');
+          clockEls.ap = document.getElementById('ck-ap');
+          clockEls.sub = document.getElementById('ck-sub');
+          clockEls.prog = document.getElementById('ck-prog');
+          clockEls.ahr = document.getElementById('ck-ahr');
+          clockEls.amin = document.getElementById('ck-amin');
+          clockEls.asec = document.getElementById('ck-asec');
+        }
+
+        // Fast DOM Updates
+        if (clockEls.h) clockEls.h.textContent = (state.clockStyle === 'flip' || state.clockStyle === 'minimal') ? pad2(dispH) : hStr;
+        if (clockEls.m) clockEls.m.textContent = mStr;
+        if (clockEls.s) clockEls.s.textContent = sStr;
+        if (clockEls.ap) clockEls.ap.textContent = ampm;
+        if (clockEls.col) clockEls.col.className = colonDim ? 'digital-colon dimmed' : 'digital-colon';
+        if (clockEls.prog) clockEls.prog.style.width = ((s / 59) * 100).toFixed(1) + '%';
+
+        if (state.clockStyle === 'minimal' && clockEls.sub) {
+          var mp = [];
+          if (effShowSec) mp.push(sStr + ' SEC');
+          if (!state.use24h) mp.push(ampm);
+          clockEls.sub.textContent = mp.join(' • ');
+        } else if (state.clockStyle === 'analog') {
+          var hrAng = ((rawH % 12) * 30) + (m * 0.5);
+          var minAng = m * 6 + s * 0.1;
+          var secAng = s * 6;
+          if (clockEls.ahr) clockEls.ahr.setAttribute('transform', 'rotate(' + hrAng + ' 100 100)');
+          if (clockEls.amin) clockEls.amin.setAttribute('transform', 'rotate(' + minAng + ' 100 100)');
+          if (clockEls.asec) clockEls.asec.setAttribute('transform', 'rotate(' + secAng + ' 100 100)');
+          if (clockEls.sub) {
+            clockEls.sub.textContent = hStr + ':' + mStr + (effShowSec ? ':' + sStr : '') + (!state.use24h ? ' ' + ampm : '');
+          }
+        }
+
+        // Weekday, Full Date & Extra Chips (World Clock + Week/Day Progress)
+        var weekdayEl = document.getElementById('clock-weekday');
+        var fulldateEl = document.getElementById('clock-fulldate');
+        var miniClockEl = document.getElementById('cal-mini-clock');
+        var extraRow = document.getElementById('clock-extra-row');
+
+        var dayName = (state.locale === 'en-ce') ? DAYS_FULL_EN[now.getDay()] : DAYS_FULL_TH[now.getDay()];
+        weekdayEl.textContent = dayName;
+        weekdayEl.style.color = activeAccent;
+        fulldateEl.textContent = formatFullDate(now);
+        miniClockEl.textContent = hStr + ':' + mStr + (effShowSec ? ':' + sStr : '') + (!state.use24h ? ' ' + ampm : '') + '  •  ' + dayName;
+
+        var chips = [];
+        if (state.worldTz && state.worldTz !== 'none') {
+          var tzParts = state.worldTz.split('|');
+          var tzName = tzParts[0];
+          var tzOffset = parseFloat(tzParts[1] || '0');
+          var utcMs = now.getTime() + (now.getTimezoneOffset() * 60000);
+          var targetDate = new Date(utcMs + (tzOffset * 3600000));
+          chips.push('<span class="extra-chip tabular-nums">' + tzName + ' ' + pad2(targetDate.getHours()) + ':' + pad2(targetDate.getMinutes()) + '</span>');
+        }
+        if (state.showDayProg) {
+          var startOfYr = new Date(now.getFullYear(), 0, 1);
+          var dayOfYr = Math.floor((now - startOfYr) / 86400000) + 1;
+          var weekNum = Math.ceil(dayOfYr / 7);
+          var dayPct = Math.round(((rawH * 60 + m) / 1440) * 100);
+          chips.push('<span class="extra-chip tabular-nums">Week ' + weekNum + ' • ' + dayPct + '% ของวัน</span>');
+        }
+        extraRow.innerHTML = chips.join('');
+
+        // Midnight Date Rollover
+        var nowKey = makeDateKey(now.getFullYear(), now.getMonth(), now.getDate());
+        if (nowKey !== lastCalendarTodayKey) {
+          lastCalendarTodayKey = nowKey;
+          viewYear = now.getFullYear();
+          viewMonth = now.getMonth();
+          selectedDateKey = nowKey;
+          renderCalendar();
+          renderAgenda();
+        }
+      }
+
+      // Drift-compensated 1-second scheduler
+      function scheduleNextTick() {
+        if (tickTimer) clearTimeout(tickTimer);
+        renderClock();
+        var ms = new Date().getMilliseconds();
+        var delay = 1000 - ms + 12;
+        if (delay < 150 || delay > 1100) delay = 1000;
+        tickTimer = setTimeout(scheduleNextTick, delay);
+      }
+
+      function normalizeNoteItem(raw) {
+        if (typeof raw === 'string') {
+          return { text: raw, prio: '#38bdf8', done: false };
+        }
+        return {
+          text: raw.text || '',
+          prio: raw.prio || '#38bdf8',
+          done: !!raw.done
+        };
+      }
+
+      function getHolidayForKey(dKey) {
+        if (!state.showHolidays) return null;
+        var mmdd = dKey.substring(5);
+        return FIXED_HOLIDAYS[mmdd] || null;
+      }
+
+      // Render Monthly Calendar Table
+      function renderCalendar() {
+        var night = isNightActive();
+        var activeAccent = night ? state.nightShade : state.accentColor;
+        var monthTitle = document.getElementById('cal-month-title');
+        var theadRow = document.getElementById('cal-thead-row');
+        var tbody = document.getElementById('cal-tbody');
+
+        var mName = (state.locale === 'en-ce') ? MONTHS_EN[viewMonth] : MONTHS_TH[viewMonth];
+        monthTitle.innerHTML = mName + ' ' + formatYear(viewYear) + ' <span style="font-size:13px;opacity:0.6;">&#9662;</span>';
+
+        var shortDays = (state.locale === 'en-ce') ? DAYS_SHORT_EN : DAYS_SHORT_TH;
+        var headHtml = '';
+        var c, dayIdx;
+        for (c = 0; c < 7; c++) {
+          dayIdx = state.mondayFirst ? ((c + 1) % 7) : c;
+          var wkStyle = (dayIdx === 0) ? ' style="color:' + activeAccent + ';"' : '';
+          headHtml += '<th' + wkStyle + '>' + shortDays[dayIdx] + '</th>';
+        }
+        theadRow.innerHTML = headHtml;
+
+        var firstDayOfMonth = new Date(viewYear, viewMonth, 1).getDay();
+        var leadOffset = state.mondayFirst ? ((firstDayOfMonth + 6) % 7) : firstDayOfMonth;
+        var daysInMonth = new Date(viewYear, viewMonth + 1, 0).getDate();
+        var daysInPrevMonth = new Date(viewYear, viewMonth, 0).getDate();
+
+        var now = new Date();
+        var todayKey = makeDateKey(now.getFullYear(), now.getMonth(), now.getDate());
+        var accContrast = isLightHex(activeAccent) ? '#0f172a' : '#ffffff';
+
+        var rowsHtml = '';
+        var cellCounter = 0;
+        var r, col;
+
+        for (r = 0; r < 6; r++) {
+          rowsHtml += '<tr>';
+          for (col = 0; col < 7; col++) {
+            var cellNum = cellCounter - leadOffset + 1;
+            var cellY = viewYear;
+            var cellM = viewMonth;
+            var cellD = cellNum;
+            var isOther = false;
+
+            if (cellNum < 1) {
+              isOther = true;
+              cellM = viewMonth - 1;
+              if (cellM < 0) { cellM = 11; cellY = viewYear - 1; }
+              cellD = daysInPrevMonth + cellNum;
+            } else if (cellNum > daysInMonth) {
+              isOther = true;
+              cellM = viewMonth + 1;
+              if (cellM > 11) { cellM = 0; cellY = viewYear + 1; }
+              cellD = cellNum - daysInMonth;
+            }
+
+            var dKey = makeDateKey(cellY, cellM, cellD);
+            var hol = getHolidayForKey(dKey);
+            var classes = ['cal-cell', 'tabular-nums'];
+            if (isOther) classes.push('other-month');
+            if (dKey === todayKey) classes.push('is-today');
+            if (dKey === selectedDateKey) classes.push('is-selected');
+
+            var inlineStyle = '';
+            if (dKey === todayKey) {
+              if (night) {
+                // In pitch-black Red Night Mode, use subtle dark red ring instead of bright block glare
+                inlineStyle = ' style="background:rgba(220,38,38,0.22);color:' + activeAccent + ';box-shadow:inset 0 0 0 2px ' + activeAccent + ';"';
+              } else {
+                inlineStyle = ' style="background:' + activeAccent + ';color:' + accContrast + ';"';
+              }
+            } else if (hol && !isOther && !night) {
+              inlineStyle = ' style="color:#f59e0b;"';
+            }
+
+            var dayNotes = notesMap[dKey] || [];
+            var dotsHtml = '<span class="cal-dots-wrap">';
+            if (hol) {
+              dotsHtml += '<span class="cal-note-dot" style="background:' + (night ? activeAccent : '#f59e0b') + ';"></span>';
+            }
+            if (dayNotes.length > 0) {
+              var firstNote = normalizeNoteItem(dayNotes[0]);
+              var dotCol = night ? activeAccent : ((dKey === todayKey) ? accContrast : firstNote.prio);
+              dotsHtml += '<span class="cal-note-dot" style="background:' + dotCol + ';"></span>';
+            }
+            dotsHtml += '</span>';
+
+            rowsHtml += '<td class="' + classes.join(' ') + '" data-date="' + dKey + '"' + inlineStyle + '>' + cellD + dotsHtml + '</td>';
+            cellCounter++;
+          }
+          rowsHtml += '</tr>';
+          if (cellCounter - leadOffset >= daysInMonth) break;
+        }
+        tbody.innerHTML = rowsHtml;
+      }
+
+      // Render Selected Date Notes + Upcoming Month Preview
+      function renderAgenda() {
+        var night = isNightActive();
+        var labelEl = document.getElementById('agenda-date-label');
+        var holEl = document.getElementById('holiday-label');
+        var listEl = document.getElementById('agenda-list');
+
+        var prefix = (state.locale === 'en-ce') ? 'Schedule • ' : 'บันทึกวันที่ ';
+        labelEl.textContent = prefix + formatKeyReadable(selectedDateKey);
+
+        var hol = getHolidayForKey(selectedDateKey);
+        if (hol) {
+          holEl.style.display = 'inline-block';
+          holEl.textContent = (state.locale === 'en-ce') ? hol.en : hol.th;
+          if (night) {
+            holEl.style.color = state.nightShade;
+            holEl.style.borderColor = state.nightShade;
+            holEl.style.background = 'transparent';
+          } else {
+            holEl.style.color = '';
+            holEl.style.borderColor = '';
+            holEl.style.background = '';
+          }
+        } else {
+          holEl.style.display = 'none';
+        }
+
+        var rawItems = notesMap[selectedDateKey] || [];
+        if (rawItems.length === 0) {
+          var upcomingHtml = '';
+          if (state.showUpcoming) {
+            var upcoming = getUpcomingInMonth(selectedDateKey);
+            if (upcoming.length > 0) {
+              var upTitle = (state.locale === 'en-ce') ? 'Upcoming this month:' : 'นัดหมายถัดไปในเดือนนี้:';
+              upcomingHtml += '<li class="agenda-empty" style="opacity:0.8;font-weight:600;">' + upTitle + '</li>';
+              var u;
+              for (u = 0; u < upcoming.length; u++) {
+                upcomingHtml += '<li class="agenda-item" style="opacity:0.78;"><span>' + upcoming[u].day + ' — ' + escapeHtml(upcoming[u].text) + '</span></li>';
+              }
+              listEl.innerHTML = upcomingHtml;
+              return;
+            }
+          }
+          var emptyMsg = (state.locale === 'en-ce') ? 'No notes for this date.' : 'ยังไม่มีบันทึกในวันนี้';
+          listEl.innerHTML = '<li class="agenda-empty">' + emptyMsg + '</li>';
+          return;
+        }
+
+        var html = '';
+        var i, item, dotColor;
+        for (i = 0; i < rawItems.length; i++) {
+          item = normalizeNoteItem(rawItems[i]);
+          dotColor = night ? state.nightShade : item.prio;
+          html += '<li class="agenda-item">';
+          html += '<div class="agenda-item-left" data-toggle-idx="' + i + '" title="แตะเพื่อขีดฆ่าว่าเสร็จแล้ว">';
+          html += '<span class="note-tag-dot" style="background:' + dotColor + ';"></span>';
+          html += '<span class="' + (item.done ? 'note-done-text' : '') + '">' + escapeHtml(item.text) + '</span>';
+          html += '</div>';
+          html += '<div>';
+          html += '<button type="button" class="agenda-act-btn" data-edit-idx="' + i + '" title="แก้ไข">&#9998;</button>';
+          html += '<button type="button" class="agenda-act-btn" data-del-idx="' + i + '" title="ลบ">&times;</button>';
+          html += '</div>';
+          html += '</li>';
+        }
+        listEl.innerHTML = html;
+      }
+
+      function getUpcomingInMonth(fromKey) {
+        var prefix = viewYear + '-' + pad2(viewMonth + 1) + '-';
+        var keys = [];
+        var k;
+        for (k in notesMap) {
+          if (notesMap.hasOwnProperty(k) && k.indexOf(prefix) === 0 && k > fromKey && notesMap[k] && notesMap[k].length > 0) {
+            keys.push(k);
+          }
+        }
+        keys.sort();
+        var res = [];
+        var i, nObj;
+        for (i = 0; i < keys.length && res.length < 3; i++) {
+          nObj = normalizeNoteItem(notesMap[keys[i]][0]);
+          res.push({ day: parseInt(keys[i].split('-')[2], 10), text: nObj.text });
+        }
+        return res;
+      }
+
+      function escapeHtml(str) {
+        return String(str)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;');
+      }
+
+      function populateTimeSelects() {
+        var hIds = ['sel-night-sh', 'sel-night-eh', 'sel-alarm-h'];
+        var mIds = ['sel-night-sm', 'sel-night-em', 'sel-alarm-m'];
+        var i, hHtml = '', mHtml = '';
+        for (i = 0; i < 24; i++) {
+          hHtml += '<option value="' + i + '">' + pad2(i) + '</option>';
+        }
+        for (i = 0; i < 60; i++) {
+          mHtml += '<option value="' + i + '">' + pad2(i) + '</option>';
+        }
+        for (i = 0; i < hIds.length; i++) {
+          document.getElementById(hIds[i]).innerHTML = hHtml;
+        }
+        for (i = 0; i < mIds.length; i++) {
+          document.getElementById(mIds[i]).innerHTML = mHtml;
+        }
+
+        // Populate Calendar Quick Jump Selects
+        var jm = document.getElementById('jump-month');
+        var jy = document.getElementById('jump-year');
+        var jmHtml = '', jyHtml = '';
+        for (i = 0; i < 12; i++) {
+          jmHtml += '<option value="' + i + '">' + MONTHS_TH[i] + '</option>';
+        }
+        var curY = new Date().getFullYear();
+        for (i = curY - 5; i <= curY + 10; i++) {
+          jyHtml += '<option value="' + i + '">' + (i + 543) + ' / ' + i + '</option>';
+        }
+        jm.innerHTML = jmHtml;
+        jy.innerHTML = jyHtml;
+      }
+
+      function updateTimerUI() {
+        var pill = document.getElementById('timer-status-pill');
+        var readout = document.getElementById('timer-readout');
+        var mm = Math.floor(countdownRemainSec / 60);
+        var ss = countdownRemainSec % 60;
+        readout.textContent = pad2(mm) + ':' + pad2(ss);
+
+        var parts = [];
+        if (state.alarmEnabled) parts.push('ปลุก ' + pad2(state.alarmH) + ':' + pad2(state.alarmM));
+        if (countdownRemainSec > 0) parts.push('นับถอยหลัง ' + pad2(mm) + ':' + pad2(ss));
+
+        if (parts.length > 0) {
+          pill.style.display = 'inline-flex';
+          pill.textContent = parts.join(' • ');
+        } else {
+          pill.style.display = 'none';
+        }
+      }
+
+      function syncControlsUI() {
+        setSelectedInGroup('opt-night-policy', 'data-val', state.nightPolicy, true);
+        setSelectedInGroup('opt-night-shade', 'data-val', state.nightShade, true);
+        setSelectedInGroup('opt-layout', 'data-val', state.layout, false);
+        setSelectedInGroup('opt-clock-style', 'data-val', state.clockStyle, false);
+        setSelectedInGroup('opt-clock-weight', 'data-val', state.clockWeight, false);
+        setSelectedInGroup('opt-themes', 'data-theme', state.theme, false);
+        setSelectedInGroup('opt-font', 'data-val', state.fontKey, false);
+        setSelectedInGroup('opt-locale', 'data-val', state.locale, false);
+        setSelectedInGroup('opt-cal-size', 'data-val', state.calSize, false);
+        setSelectedInGroup('opt-bg-mode', 'data-val', state.bgMode, false);
+        setSelectedInGroup('opt-gradients', 'data-grad', state.bgGradient, false);
+        setSelectedInGroup('opt-pattern', 'data-val', state.pattern, false);
+
+        setSelectedInGroup('swatches-text', 'data-color', state.textColor.toLowerCase(), false);
+        setSelectedInGroup('swatches-accent', 'data-color', state.accentColor.toLowerCase(), false);
+        setSelectedInGroup('swatches-bg', 'data-color', state.bgColor.toLowerCase(), false);
+
+        document.getElementById('sel-night-sh').value = String(state.nightStartH);
+        document.getElementById('sel-night-sm').value = String(state.nightStartM);
+        document.getElementById('sel-night-eh').value = String(state.nightEndH);
+        document.getElementById('sel-night-em').value = String(state.nightEndM);
+        document.getElementById('val-night-window').textContent = pad2(state.nightStartH) + ':' + pad2(state.nightStartM) + ' - ' + pad2(state.nightEndH) + ':' + pad2(state.nightEndM);
+        document.getElementById('night-schedule-group').style.opacity = (state.nightPolicy === 'scheduled') ? '1' : '0.45';
+
+        document.getElementById('inp-night-bright').value = state.nightBright;
+        document.getElementById('val-night-bright').textContent = state.nightBright + '%';
+
+        document.getElementById('inp-text-color').value = state.textColor;
+        document.getElementById('inp-accent-color').value = state.accentColor;
+        document.getElementById('inp-bg-color').value = state.bgColor;
+
+        document.getElementById('inp-clock-scale').value = state.clockScale;
+        document.getElementById('val-clock-scale').textContent = state.clockScale + '%';
+
+        document.getElementById('inp-card-alpha').value = state.cardAlpha;
+        document.getElementById('val-card-alpha').textContent = state.cardAlpha + '%';
+
+        document.getElementById('inp-bg-tint').value = state.bgTint;
+        document.getElementById('val-bg-tint').textContent = state.bgTint + '%';
+
+        document.getElementById('inp-dimmer').value = state.dimmer;
+        document.getElementById('val-dimmer').textContent = state.dimmer + '%';
+
+        document.getElementById('inp-desk-label').value = state.deskLabel;
+        document.getElementById('sel-world-tz').value = state.worldTz;
+
+        document.getElementById('sel-alarm-h').value = String(state.alarmH);
+        document.getElementById('sel-alarm-m').value = String(state.alarmM);
+
+        document.getElementById('bg-solid-box').style.display = (state.bgMode === 'solid') ? 'block' : 'none';
+        document.getElementById('bg-gradient-box').style.display = (state.bgMode === 'gradient') ? 'block' : 'none';
+        document.getElementById('bg-image-box').style.display = (state.bgMode === 'image') ? 'block' : 'none';
+
+        setToggleBtn('tog-night-borderless', state.nightBorderless, 'เปิด', 'ปิด');
+        setToggleBtn('tog-night-hidecal', state.nightHideCal, 'เปิด', 'ปิด');
+        setToggleBtn('tog-night-calm', state.nightCalm, 'เปิด', 'ปิด');
+        setToggleBtn('tog-swap', state.swapPanels, 'สลับแล้ว', 'ปกติ');
+        setToggleBtn('tog-24h', state.use24h, '24H', '12H');
+        setToggleBtn('tog-padzero', state.padZero, 'เปิด', 'ปิด');
+        setToggleBtn('tog-sec', state.showSec, 'เปิด', 'ปิด');
+        setToggleBtn('tog-blink', state.blinkColon, 'เปิด', 'ปิด');
+        setToggleBtn('tog-analog-num', state.analogNums, 'เปิด', 'ปิด');
+        setToggleBtn('tog-dayprog', state.showDayProg, 'เปิด', 'ปิด');
+        setToggleBtn('tog-monday', state.mondayFirst, 'จันทร์', 'อาทิตย์');
+        setToggleBtn('tog-holidays', state.showHolidays, 'เปิด', 'ปิด');
+        setToggleBtn('tog-agenda', state.showAgenda, 'เปิด', 'ซ่อน');
+        setToggleBtn('tog-upcoming', state.showUpcoming, 'เปิด', 'ปิด');
+        setToggleBtn('tog-greeting', state.showGreeting, 'เปิด', 'ปิด');
+        setToggleBtn('tog-chime', state.hourlyChime, 'เปิด', 'ปิด');
+        setToggleBtn('tog-pixelshift', state.pixelShift, 'เปิด', 'ปิด');
+        setToggleBtn('tog-alarm-enable', state.alarmEnabled, 'เปิดปลุก', 'ปิดอยู่');
+        updateTimerUI();
+      }
+
+      function setSelectedInGroup(containerId, attrName, activeVal, isRed) {
+        var box = document.getElementById(containerId);
+        if (!box) return;
+        var btns = box.getElementsByTagName('button');
+        var selClass = isRed ? 'selected-red' : 'selected';
+        var i, v;
+        for (i = 0; i < btns.length; i++) {
+          v = btns[i].getAttribute(attrName);
+          btns[i].className = btns[i].className.replace(/\s*selected-red/g, '').replace(/\s*selected/g, '');
+          if (v && v.toLowerCase() === String(activeVal).toLowerCase()) {
+            btns[i].className += ' ' + selClass;
+          }
+        }
+      }
+
+      function setToggleBtn(id, isOn, onText, offText) {
+        var el = document.getElementById(id);
+        if (!el) return;
+        el.className = isOn ? 'toggle-btn on' : 'toggle-btn';
+        el.textContent = isOn ? onText : offText;
+      }
+
+      function updateAll() {
+        lastClockTplKey = '';
+        applyVisualSettings();
+        syncControlsUI();
+        renderClock();
+        renderCalendar();
+        renderAgenda();
+        saveState();
+      }
+
+      // Bind All Interactive Events
+      function bindEvents() {
+        var drawer = document.getElementById('settings-drawer');
+        var guideModal = document.getElementById('guide-modal');
+        var alarmModal = document.getElementById('alarm-modal');
+        var syncModal = document.getElementById('sync-modal');
+        var backdrop = document.getElementById('backdrop');
+
+        function closeOverlays() {
+          drawer.className = 'drawer';
+          guideModal.className = 'modal-box';
+          alarmModal.className = 'modal-box';
+          syncModal.className = 'modal-box';
+          backdrop.className = 'backdrop';
+          document.getElementById('reset-confirm-bar').className = 'reset-confirm-bar';
+        }
+
+        function openDrawerTab(tabId) {
+          closeOverlays();
+          drawer.className = 'drawer open';
+          backdrop.className = 'backdrop open';
+          if (tabId) activateTab(tabId);
+        }
+
+        function activateTab(targetId) {
+          var tabs = document.querySelectorAll('.drawer-tab');
+          var panes = document.querySelectorAll('.tab-pane');
+          var j;
+          for (j = 0; j < tabs.length; j++) {
+            var baseCls = tabs[j].getAttribute('data-tab') === 'tab-night' ? 'drawer-tab tab-night-highlight' : 'drawer-tab';
+            tabs[j].className = (tabs[j].getAttribute('data-tab') === targetId) ? (baseCls + ' active') : baseCls;
+          }
+          for (j = 0; j < panes.length; j++) {
+            panes[j].className = (panes[j].id === targetId) ? 'tab-pane active' : 'tab-pane';
+          }
+        }
+
+        // Unlock WebAudio on first user interaction for iOS 9 Safari
+        document.body.addEventListener('touchstart', ensureAudio, false);
+        document.body.addEventListener('click', ensureAudio, false);
+
+        document.getElementById('btn-open-settings').onclick = function() { openDrawerTab(null); };
+        document.getElementById('night-status-pill').onclick = function() { openDrawerTab('tab-night'); };
+        document.getElementById('drawer-close').onclick = closeOverlays;
+        document.getElementById('btn-done-drawer').onclick = closeOverlays;
+
+        document.getElementById('btn-ipad-guide').onclick = function() {
+          closeOverlays();
+          guideModal.className = 'modal-box open';
+          backdrop.className = 'backdrop open';
+        };
+        document.getElementById('guide-close').onclick = closeOverlays;
+        document.getElementById('guide-ok').onclick = closeOverlays;
+
+        document.getElementById('btn-alarm-modal').onclick = function() {
+          closeOverlays();
+          alarmModal.className = 'modal-box open';
+          backdrop.className = 'backdrop open';
+        };
+        document.getElementById('timer-status-pill').onclick = document.getElementById('btn-alarm-modal').onclick;
+        document.getElementById('alarm-close').onclick = closeOverlays;
+        document.getElementById('alarm-ok').onclick = closeOverlays;
+
+        document.getElementById('btn-open-sync').onclick = function() {
+          closeOverlays();
+          document.getElementById('sync-textarea').value = JSON.stringify(state);
+          document.getElementById('sync-msg').textContent = '';
+          syncModal.className = 'modal-box open';
+          backdrop.className = 'backdrop open';
+        };
+        document.getElementById('sync-close').onclick = closeOverlays;
+        document.getElementById('btn-apply-sync').onclick = function() {
+          try {
+            var incoming = JSON.parse(document.getElementById('sync-textarea').value);
+            var k;
+            for (k in DEFAULT_STATE) {
+              if (DEFAULT_STATE.hasOwnProperty(k) && typeof incoming[k] !== 'undefined') {
+                state[k] = incoming[k];
+              }
+            }
+            updateAll();
+            document.getElementById('sync-msg').textContent = 'นำการตั้งค่ามาใช้เรียบร้อยแล้ว!';
+          } catch (err) {
+            document.getElementById('sync-msg').textContent = 'รูปแบบรหัสไม่ถูกต้อง กรุณาตรวจสอบอีกครั้ง';
+          }
+        };
+
+        backdrop.onclick = closeOverlays;
+
+        // 1-Tap Quick Red Night Mode Toggle in Topbar
+        document.getElementById('btn-quick-night').onclick = function() {
+          if (isNightActive()) {
+            state.nightPolicy = 'off';
+          } else {
+            state.nightPolicy = 'on';
+          }
+          updateAll();
+        };
+
+        // Zen Mode + Auto-Hide Peek HUD
+        function triggerZenPeek() {
+          if (!state.zenMode) return;
+          if (document.body.className.indexOf('zen-peek') === -1) {
+            document.body.className += ' zen-peek';
+          }
+          if (zenPeekTimer) clearTimeout(zenPeekTimer);
+          zenPeekTimer = setTimeout(function() {
+            document.body.className = document.body.className.replace(/\s*zen-peek/g, '');
+          }, 6000);
+        }
+
+        document.getElementById('btn-zen').onclick = function() {
+          if (state.zenMode) {
+            state.zenMode = false;
+            if (zenPeekTimer) clearTimeout(zenPeekTimer);
+            if (document.exitFullscreen && document.fullscreenElement) {
+              try { document.exitFullscreen(); } catch (e) {}
+            } else if (document.webkitExitFullscreen && document.webkitFullscreenElement) {
+              try { document.webkitExitFullscreen(); } catch (e2) {}
+            }
+          } else {
+            state.zenMode = true;
+            var docEl = document.documentElement;
+            if (docEl.requestFullscreen) {
+              try { docEl.requestFullscreen(); } catch (e3) {}
+            } else if (docEl.webkitRequestFullscreen) {
+              try { docEl.webkitRequestFullscreen(); } catch (e4) {}
+            }
+          }
+          updateAll();
+        };
+
+        document.getElementById('zen-restore').onclick = function(e) {
+          e.stopPropagation();
+          state.zenMode = false;
+          updateAll();
+        };
+
+        document.getElementById('panel-clock').onclick = function() {
+          if (state.zenMode) triggerZenPeek();
+        };
+
+        // Drawer Tabs
+        var tabs = document.querySelectorAll('.drawer-tab');
+        var t;
+        for (t = 0; t < tabs.length; t++) {
+          tabs[t].onclick = function() {
+            activateTab(this.getAttribute('data-tab'));
+          };
+        }
+
+        // Option Group Helper
+        function bindGroup(id, attr, callback) {
+          var box = document.getElementById(id);
+          if (!box) return;
+          box.onclick = function(e) {
+            var target = e.target || e.srcElement;
+            while (target && target !== box && !target.getAttribute(attr)) {
+              target = target.parentNode;
+            }
+            if (target && target !== box) {
+              var val = target.getAttribute(attr);
+              if (val !== null) callback(val);
+            }
+          };
+        }
+
+        // Night Mode Controls
+        bindGroup('opt-night-policy', 'data-val', function(v) { state.nightPolicy = v; updateAll(); });
+        bindGroup('opt-night-shade', 'data-val', function(v) { state.nightShade = v; updateAll(); });
+
+        document.getElementById('sel-night-sh').onchange = function() { state.nightStartH = parseInt(this.value, 10); state.nightPolicy = 'scheduled'; updateAll(); };
+        document.getElementById('sel-night-sm').onchange = function() { state.nightStartM = parseInt(this.value, 10); state.nightPolicy = 'scheduled'; updateAll(); };
+        document.getElementById('sel-night-eh').onchange = function() { state.nightEndH = parseInt(this.value, 10); state.nightPolicy = 'scheduled'; updateAll(); };
+        document.getElementById('sel-night-em').onchange = function() { state.nightEndM = parseInt(this.value, 10); state.nightPolicy = 'scheduled'; updateAll(); };
+
+        document.getElementById('inp-night-bright').oninput = function() {
+          state.nightBright = parseInt(this.value, 10);
+          updateAll();
+        };
+        document.getElementById('tog-night-borderless').onclick = function() { state.nightBorderless = !state.nightBorderless; updateAll(); };
+        document.getElementById('tog-night-hidecal').onclick = function() { state.nightHideCal = !state.nightHideCal; updateAll(); };
+        document.getElementById('tog-night-calm').onclick = function() { state.nightCalm = !state.nightCalm; updateAll(); };
+
+        // Layout, Clock, Fonts, Background
+        bindGroup('opt-layout', 'data-val', function(v) { state.layout = v; updateAll(); });
+        bindGroup('opt-clock-style', 'data-val', function(v) { state.clockStyle = v; updateAll(); });
+        bindGroup('opt-clock-weight', 'data-val', function(v) { state.clockWeight = v; updateAll(); });
+        bindGroup('opt-font', 'data-val', function(v) { state.fontKey = v; updateAll(); });
+        bindGroup('opt-locale', 'data-val', function(v) { state.locale = v; updateAll(); });
+        bindGroup('opt-cal-size', 'data-val', function(v) { state.calSize = v; updateAll(); });
+        bindGroup('opt-bg-mode', 'data-val', function(v) { state.bgMode = v; updateAll(); });
+        bindGroup('opt-gradients', 'data-grad', function(v) {
+          state.bgMode = 'gradient';
+          state.bgGradient = v;
+          if (v === 'morning') state.textColor = '#1e293b';
+          else if (state.textColor === '#1e293b') state.textColor = '#f8fafc';
+          updateAll();
+        });
+        bindGroup('opt-pattern', 'data-val', function(v) { state.pattern = v; updateAll(); });
+
+        bindGroup('opt-themes', 'data-theme', function(thKey) {
+          var preset = THEMES[thKey];
+          if (!preset) return;
+          state.theme = thKey;
+          state.bgMode = preset.bgMode;
+          state.bgColor = preset.bgColor;
+          state.textColor = preset.textColor;
+          state.accentColor = preset.accentColor;
+          state.cardDarkSurface = preset.cardDarkSurface;
+          state.cardAlpha = preset.cardAlpha;
+          updateAll();
+        });
+
+        bindGroup('swatches-text', 'data-color', function(c) { state.theme = 'custom'; state.textColor = c; updateAll(); });
+        bindGroup('swatches-accent', 'data-color', function(c) { state.theme = 'custom'; state.accentColor = c; updateAll(); });
+        bindGroup('swatches-bg', 'data-color', function(c) { state.theme = 'custom'; state.bgMode = 'solid'; state.bgColor = c; updateAll(); });
+
+        document.getElementById('inp-text-color').onchange = function() { state.theme = 'custom'; state.textColor = this.value; updateAll(); };
+        document.getElementById('inp-accent-color').onchange = function() { state.theme = 'custom'; state.accentColor = this.value; updateAll(); };
+        document.getElementById('inp-bg-color').onchange = function() { state.theme = 'custom'; state.bgMode = 'solid'; state.bgColor = this.value; updateAll(); };
+
+        document.getElementById('btn-fix-contrast').onclick = function() {
+          state.textColor = isLightHex(state.bgColor) ? '#0f172a' : '#f8fafc';
+          updateAll();
+        };
+
+        // Favorite Profile Slots
+        document.getElementById('tab-colors').addEventListener('click', function(e) {
+          var tEl = e.target || e.srcElement;
+          var saveIdx = tEl.getAttribute('data-slot-save');
+          var loadIdx = tEl.getAttribute('data-slot-load');
+          if (saveIdx !== null) {
+            favoriteSlots[parseInt(saveIdx, 10)] = cloneObj(state);
+            saveSlots();
+            tEl.textContent = 'บันทึกแล้ว!';
+            setTimeout(function() { tEl.textContent = 'บันทึกทับ'; }, 1200);
+          } else if (loadIdx !== null) {
+            var saved = favoriteSlots[parseInt(loadIdx, 10)];
+            if (saved) {
+              state = cloneObj(saved);
+              updateAll();
+            }
+          }
+        }, false);
+
+        // Sliders & Inputs
+        document.getElementById('inp-clock-scale').oninput = function() { state.clockScale = parseInt(this.value, 10); updateAll(); };
+        document.getElementById('inp-card-alpha').oninput = function() { state.cardAlpha = parseInt(this.value, 10); updateAll(); };
+        document.getElementById('inp-bg-tint').oninput = function() { state.bgTint = parseInt(this.value, 10); updateAll(); };
+        document.getElementById('inp-dimmer').oninput = function() { state.dimmer = parseInt(this.value, 10); updateAll(); };
+        document.getElementById('sel-world-tz').onchange = function() { state.worldTz = this.value; updateAll(); };
+
+        document.getElementById('inp-desk-label').oninput = function() {
+          state.deskLabel = this.value;
+          document.getElementById('desk-label-display').textContent = state.deskLabel || 'Desk Clock & Calendar';
+          saveState();
+        };
+
+        document.getElementById('inp-bg-file').onchange = function() {
+          var file = this.files && this.files[0];
+          if (!file) return;
+          var reader = new FileReader();
+          reader.onload = function(evt) {
+            state.bgMode = 'image';
+            state.bgImageData = evt.target.result;
+            updateAll();
+          };
+          reader.readAsDataURL(file);
+        };
+        document.getElementById('inp-bg-url').onchange = function() {
+          var urlVal = this.value.replace(/^\s+|\s+$/g, '');
+          if (urlVal) {
+            state.bgMode = 'image';
+            state.bgImageData = urlVal;
+            updateAll();
+          }
+        };
+
+        // Toggles
+        document.getElementById('tog-swap').onclick = function() { state.swapPanels = !state.swapPanels; updateAll(); };
+        document.getElementById('tog-24h').onclick = function() { state.use24h = !state.use24h; updateAll(); };
+        document.getElementById('tog-padzero').onclick = function() { state.padZero = !state.padZero; updateAll(); };
+        document.getElementById('tog-sec').onclick = function() { state.showSec = !state.showSec; updateAll(); };
+        document.getElementById('tog-blink').onclick = function() { state.blinkColon = !state.blinkColon; updateAll(); };
+        document.getElementById('tog-analog-num').onclick = function() { state.analogNums = !state.analogNums; updateAll(); };
+        document.getElementById('tog-dayprog').onclick = function() { state.showDayProg = !state.showDayProg; updateAll(); };
+        document.getElementById('tog-monday').onclick = function() { state.mondayFirst = !state.mondayFirst; updateAll(); };
+        document.getElementById('tog-holidays').onclick = function() { state.showHolidays = !state.showHolidays; updateAll(); };
+        document.getElementById('tog-agenda').onclick = function() { state.showAgenda = !state.showAgenda; updateAll(); };
+        document.getElementById('tog-upcoming').onclick = function() { state.showUpcoming = !state.showUpcoming; updateAll(); };
+        document.getElementById('tog-greeting').onclick = function() { state.showGreeting = !state.showGreeting; updateAll(); };
+        document.getElementById('tog-chime').onclick = function() {
+          state.hourlyChime = !state.hourlyChime;
+          if (state.hourlyChime) playGentleTone(659.25, 0.45);
+          updateAll();
+        };
+        document.getElementById('tog-pixelshift').onclick = function() { lastPixelShiftMin = -1; state.pixelShift = !state.pixelShift; updateAll(); };
+
+        // Safe In-Page Reset Confirmation
+        document.getElementById('btn-reset').onclick = function() {
+          document.getElementById('reset-confirm-bar').className = 'reset-confirm-bar open';
+        };
+        document.getElementById('btn-reset-cancel').onclick = function() {
+          document.getElementById('reset-confirm-bar').className = 'reset-confirm-bar';
+        };
+        document.getElementById('btn-reset-yes').onclick = function() {
+          state = cloneObj(DEFAULT_STATE);
+          document.getElementById('reset-confirm-bar').className = 'reset-confirm-bar';
+          updateAll();
+        };
+
+        // Alarm & Countdown Timer Controls
+        document.getElementById('tog-alarm-enable').onclick = function() { state.alarmEnabled = !state.alarmEnabled; updateAll(); };
+        document.getElementById('sel-alarm-h').onchange = function() { state.alarmH = parseInt(this.value, 10); state.alarmEnabled = true; updateAll(); };
+        document.getElementById('sel-alarm-m').onchange = function() { state.alarmM = parseInt(this.value, 10); state.alarmEnabled = true; updateAll(); };
+        document.getElementById('btn-test-sound').onclick = function() { playGentleTone(587.33, 0.5); };
+
+        alarmModal.addEventListener('click', function(e) {
+          var tEl = e.target || e.srcElement;
+          var addMin = tEl.getAttribute('data-timer-min');
+          if (addMin) {
+            countdownRemainSec += parseInt(addMin, 10) * 60;
+            updateTimerUI();
+          }
+        }, false);
+        document.getElementById('btn-timer-stop').onclick = function() {
+          countdownRemainSec = 0;
+          updateTimerUI();
+        };
+
+        document.getElementById('btn-dismiss-ring').onclick = stopRinging;
+        document.getElementById('btn-snooze-ring').onclick = function() {
+          stopRinging();
+          countdownRemainSec = 5 * 60;
+          updateTimerUI();
+        };
+
+        // Calendar Navigation & Quick Month/Year Jump
+        document.getElementById('cal-prev').onclick = function() {
+          viewMonth--;
+          if (viewMonth < 0) { viewMonth = 11; viewYear--; }
+          renderCalendar();
+          renderAgenda();
+        };
+        document.getElementById('cal-next').onclick = function() {
+          viewMonth++;
+          if (viewMonth > 11) { viewMonth = 0; viewYear++; }
+          renderCalendar();
+          renderAgenda();
+        };
+        document.getElementById('cal-today').onclick = function() {
+          var n = new Date();
+          viewYear = n.getFullYear();
+          viewMonth = n.getMonth();
+          selectedDateKey = makeDateKey(n.getFullYear(), n.getMonth(), n.getDate());
+          renderCalendar();
+          renderAgenda();
+        };
+
+        var jumpBar = document.getElementById('cal-jump-bar');
+        document.getElementById('cal-month-title').onclick = function() {
+          var isOpen = jumpBar.className.indexOf('open') !== -1;
+          if (isOpen) {
+            jumpBar.className = 'cal-jump-bar';
+          } else {
+            document.getElementById('jump-month').value = String(viewMonth);
+            document.getElementById('jump-year').value = String(viewYear);
+            jumpBar.className = 'cal-jump-bar open';
+          }
+        };
+        document.getElementById('jump-month').onchange = function() { viewMonth = parseInt(this.value, 10); renderCalendar(); renderAgenda(); };
+        document.getElementById('jump-year').onchange = function() { viewYear = parseInt(this.value, 10); renderCalendar(); renderAgenda(); };
+        document.getElementById('jump-close').onclick = function() { jumpBar.className = 'cal-jump-bar'; };
+
+        // Touch Swipe Left/Right on Calendar Panel
+        var touchStartX = 0;
+        var touchStartY = 0;
+        var calPanel = document.getElementById('panel-calendar');
+        calPanel.addEventListener('touchstart', function(e) {
+          if (e.touches && e.touches.length === 1) {
+            touchStartX = e.touches[0].clientX;
+            touchStartY = e.touches[0].clientY;
+          }
+        }, false);
+        calPanel.addEventListener('touchend', function(e) {
+          if (e.changedTouches && e.changedTouches.length === 1) {
+            var dx = e.changedTouches[0].clientX - touchStartX;
+            var dy = e.changedTouches[0].clientY - touchStartY;
+            if (Math.abs(dx) > 55 && Math.abs(dy) < 45) {
+              if (dx < 0) document.getElementById('cal-next').onclick();
+              else document.getElementById('cal-prev').onclick();
+            }
+          }
+        }, false);
+
+        // Select Calendar Date
+        document.getElementById('cal-tbody').onclick = function(e) {
+          var target = e.target || e.srcElement;
+          while (target && target.tagName !== 'TD' && target !== this) {
+            target = target.parentNode;
+          }
+          if (target && target.tagName === 'TD') {
+            var dKey = target.getAttribute('data-date');
+            if (dKey) {
+              editingNoteIdx = -1;
+              document.getElementById('agenda-input').value = '';
+              selectedDateKey = dKey;
+              var parts = dKey.split('-');
+              var clickedY = parseInt(parts[0], 10);
+              var clickedM = parseInt(parts[1], 10) - 1;
+              if (clickedY !== viewYear || clickedM !== viewMonth) {
+                viewYear = clickedY;
+                viewMonth = clickedM;
+              }
+              applyVisualSettings();
+              renderCalendar();
+              renderAgenda();
+            }
+          }
+        };
+
+        // Note Priority Swatches
+        var prioBtns = document.querySelectorAll('.prio-btn');
+        var p;
+        for (p = 0; p < prioBtns.length; p++) {
+          prioBtns[p].onclick = function() {
+            selectedNotePrio = this.getAttribute('data-prio');
+            var k;
+            for (k = 0; k < prioBtns.length; k++) {
+              prioBtns[k].className = (prioBtns[k] === this) ? 'prio-btn selected' : 'prio-btn';
+            }
+          };
+        }
+
+        // Add / Save Edited Note
+        document.getElementById('agenda-form').onsubmit = function(e) {
+          if (e && e.preventDefault) e.preventDefault();
+          var inp = document.getElementById('agenda-input');
+          var txt = inp.value.replace(/^\s+|\s+$/g, '');
+          if (!txt) return false;
+          if (!notesMap[selectedDateKey]) notesMap[selectedDateKey] = [];
+
+          if (editingNoteIdx >= 0 && notesMap[selectedDateKey][editingNoteIdx]) {
+            var prev = normalizeNoteItem(notesMap[selectedDateKey][editingNoteIdx]);
+            notesMap[selectedDateKey][editingNoteIdx] = { text: txt, prio: selectedNotePrio, done: prev.done };
+            editingNoteIdx = -1;
+          } else {
+            notesMap[selectedDateKey].push({ text: txt, prio: selectedNotePrio, done: false });
+          }
+          inp.value = '';
+          saveNotes();
+          applyVisualSettings();
+          renderCalendar();
+          renderAgenda();
+          return false;
+        };
+
+        // Toggle Complete / Edit / Delete Note
+        document.getElementById('agenda-list').onclick = function(e) {
+          var target = e.target || e.srcElement;
+          while (target && target !== this) {
+            var delIdx = target.getAttribute('data-del-idx');
+            var editIdx = target.getAttribute('data-edit-idx');
+            var togIdx = target.getAttribute('data-toggle-idx');
+            if (delIdx !== null) {
+              var di = parseInt(delIdx, 10);
+              if (notesMap[selectedDateKey]) {
+                notesMap[selectedDateKey].splice(di, 1);
+                if (notesMap[selectedDateKey].length === 0) delete notesMap[selectedDateKey];
+                editingNoteIdx = -1;
+                saveNotes();
+                renderCalendar();
+                renderAgenda();
+              }
+              return;
+            }
+            if (editIdx !== null) {
+              var ei = parseInt(editIdx, 10);
+              if (notesMap[selectedDateKey] && notesMap[selectedDateKey][ei]) {
+                var obj = normalizeNoteItem(notesMap[selectedDateKey][ei]);
+                editingNoteIdx = ei;
+                selectedNotePrio = obj.prio;
+                document.getElementById('agenda-input').value = obj.text;
+                document.getElementById('agenda-input').focus();
+                applyVisualSettings();
+              }
+              return;
+            }
+            if (togIdx !== null) {
+              var ti = parseInt(togIdx, 10);
+              if (notesMap[selectedDateKey] && notesMap[selectedDateKey][ti]) {
+                var tObj = normalizeNoteItem(notesMap[selectedDateKey][ti]);
+                tObj.done = !tObj.done;
+                notesMap[selectedDateKey][ti] = tObj;
+                saveNotes();
+                renderAgenda();
+              }
+              return;
+            }
+            target = target.parentNode;
+          }
+        };
+
+        // Keyboard Shortcuts (S = Settings, N = Red Night Mode, F = Zen Fullscreen, Esc = Close)
+        document.addEventListener('keydown', function(e) {
+          var tag = (e.target && e.target.tagName) ? e.target.tagName.toUpperCase() : '';
+          if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
+          var code = e.keyCode || e.which;
+          if (code === 27) { // Esc
+            closeOverlays();
+          } else if (code === 78) { // N
+            document.getElementById('btn-quick-night').onclick();
+          } else if (code === 83) { // S
+            openDrawerTab(null);
+          } else if (code === 70) { // F
+            document.getElementById('btn-zen').onclick();
+          }
+        }, false);
+
+        // Instant Recovery on iPad Wake / Tab Focus
+        function onWake() {
+          lastClockTplKey = '';
+          updateAll();
+          scheduleNextTick();
+        }
+        document.addEventListener('visibilitychange', function() {
+          if (!document.hidden) onWake();
+        }, false);
+        window.addEventListener('pageshow', onWake, false);
+        window.addEventListener('focus', onWake, false);
+      }
+
+      // Initialize Everything
+      setupTouchIcon();
+      populateTimeSelects();
+      loadState();
+      bindEvents();
+      updateAll();
+      scheduleNextTick();
+    })();
+  </script>
+</body>
+</html>
